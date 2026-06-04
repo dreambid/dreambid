@@ -1,0 +1,142 @@
+[
+  {
+    "id": "br-001",
+    "consumerId": "consumer-001",
+    "category": "tv",
+    "categoryName": "TV",
+    "specs": {
+      "size": "65",
+      "quality": "oled",
+      "brand": "samsung-or-lg"
+    },
+    "modelName": "",
+    "status": "bidding",
+    "bidCount": 3,
+    "selectedBidId": null,
+    "expiresAt": "2026-06-10T23:59:59Z",
+    "createdAt": "2026-06-01T10:00:00Z",
+    "updatedAt": "2026-06-02T09:00:00Z"
+  },
+  {
+    "id": "br-002",
+    "consumerId": "consumer-001",
+    "category": "refrigerator",
+    "categoryName": "냉장고",
+    "specs": {
+      "type": "side-by-side",
+      "capacity": "800+",
+      "energy": "grade1",
+      "color": "any"
+    },
+    "modelName": "삼성 RS80B5571B4",
+    "status": "open",
+    "bidCount": 1,
+    "selectedBidId": null,
+    "expiresAt": "2026-06-12T23:59:59Z",
+    "createdAt": "2026-06-02T08:00:00Z",
+    "updatedAt": "2026-06-02T08:00:00Z"
+  },
+  {
+    "id": "br-003",
+    "consumerId": "consumer-002",
+    "category": "air-conditioner",
+    "categoryName": "에어컨",
+    "specs": {
+      "type": "stand",
+      "area": "20+",
+      "brand": "any"
+    },
+    "modelName": "",
+    "status": "bidding",
+    "bidCount": 5,
+    "selectedBidId": null,
+    "expiresAt": "2026-06-08T23:59:59Z",
+    "createdAt": "2026-05-30T14:00:00Z",
+    "updatedAt": "2026-06-01T16:00:00Z"
+  },
+  {
+    "id": "br-004",
+    "consumerId": "consumer-003",
+    "category": "washing-machine",
+    "categoryName": "세탁기/건조기",
+    "specs": {
+      "type": "washtower",
+      "capacity": "21+17",
+      "brand": "lg"
+    },
+    "modelName": "",
+    "status": "selected",
+    "bidCount": 4,
+    "selectedBidId": "bid-003",
+    "expiresAt": "2026-06-07T23:59:59Z",
+    "createdAt": "2026-05-28T09:00:00Z",
+    "updatedAt": "2026-06-01T11:00:00Z"
+  },
+  {
+    "id": "br-005",
+    "consumerId": "consumer-003",
+    "category": "clothing-care",
+    "categoryName": "의류관리기",
+    "specs": {
+      "brand": "lg",
+      "capacity": "5"
+    },
+    "modelName": "",
+    "status": "open",
+    "bidCount": 0,
+    "selectedBidId": null,
+    "expiresAt": "2026-06-15T23:59:59Z",
+    "createdAt": "2026-06-02T11:00:00Z",
+    "updatedAt": "2026-06-02T11:00:00Z"
+  },
+  {
+    "id": "br-1780478994290-35ldm",
+    "consumerId": "consumer-001",
+    "category": "tv",
+    "categoryName": "TV",
+    "specs": {
+      "size": "85+",
+      "quality": "qled",
+      "brand": "any"
+    },
+    "modelName": "",
+    "status": "open",
+    "bidCount": 0,
+    "expiresAt": "2026-06-10T09:29:54.290Z",
+    "createdAt": "2026-06-03T09:29:54.290Z",
+    "updatedAt": "2026-06-03T09:29:54.290Z"
+  },
+  {
+    "id": "br-1780535395299-5l1e4",
+    "consumerId": "consumer-001",
+    "category": "tv",
+    "categoryName": "TV",
+    "specs": {
+      "size": "85+",
+      "quality": "oled",
+      "brand": "samsung-or-lg"
+    },
+    "modelName": "",
+    "status": "open",
+    "bidCount": 0,
+    "expiresAt": "2026-06-11T01:09:55.299Z",
+    "createdAt": "2026-06-04T01:09:55.299Z",
+    "updatedAt": "2026-06-04T01:09:55.299Z"
+  },
+  {
+    "id": "br-1780551869031-89726",
+    "consumerId": "consumer-001",
+    "category": "clothing-care",
+    "categoryName": "의류관리기",
+    "specs": {
+      "brand": "lg",
+      "capacity": "5"
+    },
+    "modelName": "",
+    "status": "open",
+    "bidCount": 0,
+    "expiresAt": "2026-06-11T05:44:29.031Z",
+    "createdAt": "2026-06-04T05:44:29.031Z",
+    "updatedAt": "2026-06-04T05:44:29.031Z"
+  }
+]

@@ -1,0 +1,11 @@
+[
+  {
+    "id": "basket-001",
+    "consumerId": "consumer-001",
+    "bidId": "bid-001",
+    "requestId": "br-001",
+    "category": "tv",
+    "categoryName": "TV",
+    "addedAt": "2026-06-02T16:00:00Z"
+  }
+]

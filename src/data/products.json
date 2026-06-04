@@ -1,0 +1,224 @@
+{
+  "categories": [
+    {
+      "id": "tv",
+      "name": "TV",
+      "icon": "📺",
+      "steps": [
+        {
+          "id": "size",
+          "question": "원하시는 TV 크기는요?",
+          "type": "single",
+          "options": [
+            {"value": "55", "label": "55인치"},
+            {"value": "65", "label": "65인치"},
+            {"value": "75", "label": "75인치"},
+            {"value": "85+", "label": "85인치 이상"}
+          ]
+        },
+        {
+          "id": "quality",
+          "question": "화질은 어느 정도 원하세요?",
+          "type": "single",
+          "helpKey": "tv-quality",
+          "options": [
+            {"value": "oled", "label": "OLED"},
+            {"value": "qled", "label": "QLED"},
+            {"value": "4k-uhd", "label": "4K UHD"},
+            {"value": "unknown", "label": "잘 모르겠어요"}
+          ]
+        },
+        {
+          "id": "brand",
+          "question": "선호하는 브랜드가 있으신가요?",
+          "type": "single",
+          "options": [
+            {"value": "samsung", "label": "삼성"},
+            {"value": "lg", "label": "LG"},
+            {"value": "samsung-or-lg", "label": "삼성 또는 LG"},
+            {"value": "any", "label": "브랜드 상관없어요"}
+          ]
+        }
+      ],
+      "hasModelInput": true
+    },
+    {
+      "id": "refrigerator",
+      "name": "냉장고",
+      "icon": "🧊",
+      "steps": [
+        {
+          "id": "type",
+          "question": "어떤 냉장고를 원하세요?",
+          "type": "single",
+          "options": [
+            {"value": "mini", "label": "소형/미니"},
+            {"value": "general", "label": "일반형 (상하도어)"},
+            {"value": "side-by-side", "label": "양문형"},
+            {"value": "french-door", "label": "4도어 (프렌치도어)"}
+          ]
+        },
+        {
+          "id": "capacity",
+          "question": "용량은요?",
+          "type": "single",
+          "options": [
+            {"value": "under-200", "label": "200L 미만 (소형/미니)"},
+            {"value": "200-400", "label": "200~400L (일반형)"},
+            {"value": "400-600", "label": "400~600L (일반형 대용량)"},
+            {"value": "600-800", "label": "600~800L (양문형)"},
+            {"value": "800+", "label": "800L 이상 (양문형/4도어)"}
+          ]
+        },
+        {
+          "id": "energy",
+          "question": "소비전력 등급은요?",
+          "type": "single",
+          "helpKey": "energy-grade",
+          "options": [
+            {"value": "grade1", "label": "1등급"},
+            {"value": "grade2", "label": "2등급"},
+            {"value": "any", "label": "상관없어요"}
+          ]
+        },
+        {
+          "id": "color",
+          "question": "선호하는 색상은요?",
+          "type": "single",
+          "options": [
+            {"value": "white", "label": "화이트"},
+            {"value": "silver", "label": "실버"},
+            {"value": "black", "label": "블랙"},
+            {"value": "bespoke", "label": "컬러 (비스포크/오브제)"},
+            {"value": "any", "label": "상관없어요"}
+          ]
+        }
+      ],
+      "hasModelInput": true
+    },
+    {
+      "id": "air-conditioner",
+      "name": "에어컨",
+      "icon": "❄️",
+      "steps": [
+        {
+          "id": "type",
+          "question": "어떤 에어컨을 원하세요?",
+          "type": "single",
+          "options": [
+            {"value": "wall", "label": "벽걸이"},
+            {"value": "stand", "label": "스탠드"},
+            {"value": "2in1", "label": "2in1 멀티형"},
+            {"value": "dual", "label": "냉난방기기"}
+          ]
+        },
+        {
+          "id": "area",
+          "question": "설치 공간이 몇 평인가요?",
+          "type": "single",
+          "options": [
+            {"value": "under-6", "label": "6평 이하"},
+            {"value": "10-12", "label": "10~12평"},
+            {"value": "15", "label": "15평"},
+            {"value": "18", "label": "18평"},
+            {"value": "20+", "label": "20평 이상"}
+          ]
+        },
+        {
+          "id": "brand",
+          "question": "브랜드 선호?",
+          "type": "single",
+          "options": [
+            {"value": "samsung", "label": "삼성"},
+            {"value": "lg", "label": "LG"},
+            {"value": "carrier", "label": "캐리어"},
+            {"value": "any", "label": "브랜드 상관없어요"}
+          ]
+        }
+      ],
+      "hasModelInput": true
+    },
+    {
+      "id": "washing-machine",
+      "name": "세탁기/건조기",
+      "icon": "🫧",
+      "steps": [
+        {
+          "id": "type",
+          "question": "어떤 제품을 원하세요?",
+          "type": "single",
+          "options": [
+            {"value": "drum", "label": "드럼세탁기"},
+            {"value": "pulsator", "label": "통돌이세탁기"},
+            {"value": "washtower", "label": "워시타워"},
+            {"value": "set", "label": "세탁+건조 세트"},
+            {"value": "dryer", "label": "건조기 단독"}
+          ]
+        },
+        {
+          "id": "capacity",
+          "question": "용량은요?",
+          "type": "single",
+          "options": [
+            {"value": "under-12", "label": "12kg 이하"},
+            {"value": "14-17", "label": "14~17kg"},
+            {"value": "18-21", "label": "18~21kg"},
+            {"value": "22+", "label": "22kg 이상"}
+          ]
+        },
+        {
+          "id": "brand",
+          "question": "브랜드 선호?",
+          "type": "single",
+          "options": [
+            {"value": "samsung", "label": "삼성"},
+            {"value": "lg", "label": "LG"},
+            {"value": "any", "label": "브랜드 상관없어요"}
+          ]
+        }
+      ],
+      "hasModelInput": true
+    },
+    {
+      "id": "clothing-care",
+      "name": "의류관리기",
+      "icon": "👔",
+      "steps": [
+        {
+          "id": "brand",
+          "question": "브랜드 선호?",
+          "type": "single",
+          "options": [
+            {"value": "samsung", "label": "삼성 (에어드레서)"},
+            {"value": "lg", "label": "LG (스타일러)"},
+            {"value": "any", "label": "브랜드 상관없어요"}
+          ]
+        },
+        {
+          "id": "capacity",
+          "question": "용량은요?",
+          "type": "single",
+          "options": [
+            {"value": "3", "label": "3벌형 (1~2인)"},
+            {"value": "5", "label": "5벌형 (3~4인)"},
+            {"value": "9", "label": "9벌형 (대가족)"}
+          ]
+        }
+      ],
+      "hasModelInput": true
+    }
+  ],
+  "helpTexts": {
+    "tv-quality": {
+      "oled": "각 픽셀이 스스로 빛을 내는 최상급 화질. 블랙이 완벽하고 색감이 풍부합니다. ⚠️ 시청환경에 따라 화질 차이가 날 수 있습니다.",
+      "qled": "삼성의 퀀텀닷 기술 적용 고화질. 밝은 환경에서도 선명하고 색감이 뛰어납니다.",
+      "4k-uhd": "선명하고 깨끗한 화질로 일상적인 TV 시청에 충분합니다. 가성비 최고의 선택입니다.",
+      "unknown": "괜찮습니다! 예산과 시청 환경을 알려주시면 판매자들이 최적의 화질을 추천해드립니다."
+    },
+    "energy-grade": {
+      "grade1": "연간 전기료 절감 효과가 가장 큰 최고 효율 등급입니다. 장기 사용 시 전기료 차이가 큽니다.",
+      "grade2": "1등급 대비 약 10% 더 많은 전기를 사용합니다. 비교적 합리적인 선택입니다.",
+      "any": "판매자가 예산에 맞는 최적 등급의 제품을 추천해드립니다."
+    }
+  }
+}

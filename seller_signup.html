@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DreamBid Family - 판매자 가입</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; display: flex; justify-content: center; padding: 40px 16px; }
+.card { background: #fff; border-radius: 16px; border: 1px solid #e5e5e5; width: 100%; max-width: 340px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+.header { padding: 20px 24px 16px; border-bottom: 1px solid #f0f0f0; text-align: center; }
+.header h1 { font-size: 18px; font-weight: 600; color: #1a1a1a; margin-bottom: 2px; }
+.subtitle { font-size: 12px; color: #888; }
+.body { padding: 20px 24px; }
+.dots { display: flex; gap: 8px; justify-content: center; margin-bottom: 20px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #e5e5e5; }
+.dot.active { background: #1a1a1a; }
+.section-title { font-size: 12px; font-weight: 600; color: #888; margin-bottom: 12px; }
+.field { margin-bottom: 12px; }
+.label { font-size: 12px; color: #888; display: block; margin-bottom: 4px; }
+.req { color: #E24B4A; margin-left: 2px; }
+.opt { color: #aaa; font-size: 11px; margin-left: 4px; }
+.inp { width: 100%; padding: 8px 12px; font-size: 13px; border-radius: 8px; border: 1px solid #e5e5e5; box-sizing: border-box; }
+.inp.auto { background: #f8f8f8; }
+.row { display: flex; gap: 8px; }
+.btn-sm { padding: 8px 12px; font-size: 12px; border-radius: 8px; border: 1px solid #e5e5e5; cursor: pointer; white-space: nowrap; background: #fff; }
+.btn-sm.confirmed { color: #22c55e; border-color: #22c55e; }
+.roadview { background: #f8f8f8; border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; font-size: 11px; color: #888; display: flex; align-items: center; gap: 6px; }
+.roadview .ok { color: #22c55e; }
+.yesno { display: flex; gap: 8px; }
+.yesno button { flex: 1; padding: 8px; font-size: 12px; border-radius: 8px; border: 1px solid #e5e5e5; cursor: pointer; background: #fff; }
+.yesno button.selected { background: #f0f0f0; font-weight: 600; }
+.sep { border-top: 1px solid #f0f0f0; padding-top: 14px; margin-bottom: 14px; }
+.sep-title { font-size: 12px; font-weight: 600; color: #888; margin-bottom: 12px; }
+select.inp { appearance: none; }
+.sms-box { margin-bottom: 12px; }
+.ok-msg { font-size: 11px; color: #22c55e; margin-top: 4px; }
+.err-msg { font-size: 11px; color: #E24B4A; margin-top: 4px; }
+.account-result { background: #f0fdf4; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+.account-result span { font-size: 12px; color: #888; }
+.account-result strong { font-size: 13px; color: #22c55e; }
+.btn-next { width: 100%; padding: 12px; font-size: 14px; font-weight: 600; border-radius: 10px; border: 1px solid #e5e5e5; cursor: pointer; background: #1a1a1a; color: #fff; margin-top: 8px; }
+.notice { font-size: 11px; color: #aaa; text-align: center; margin-top: 16px; line-height: 1.6; }
+
+/* Step 2 */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 14px; }
+.opt-btn { padding: 8px; font-size: 12px; border-radius: 8px; border: 1px solid #e5e5e5; cursor: pointer; background: #fff; text-align: center; }
+.opt-btn.selected { background: #f0f0f0; font-weight: 600; }
+
+/* Step 3 */
+.product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 20px; }
+.product-btn { padding: 10px 8px; font-size: 12px; border-radius: 8px; border: 1px solid #e5e5e5; cursor: pointer; background: #fff; text-align: center; }
+.product-btn.full { grid-column: span 2; }
+.product-btn.selected { background: #f0f0f0; font-weight: 600; }
+.complete-box { background: #f8f8f8; border-radius: 10px; padding: 16px; text-align: center; margin-bottom: 20px; }
+.complete-box h3 { font-size: 13px; font-weight: 600; margin: 8px 0 4px; }
+.complete-box p { font-size: 12px; color: #888; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <h1>DreamBid Family</h1>
+    <p id="stepLabel" class="subtitle">1단계 — 사업자 인증</p>
+  </div>
+
+  <div class="body">
+    <div class="dots">
+      <div class="dot active" id="d1"></div>
+      <div class="dot" id="d2"></div>
+      <div class="dot" id="d3"></div>
+    </div>
+
+    <!-- STEP 1 -->
+    <div id="step1">
+      <div class="field">
+        <label class="label">사업자등록번호 <span class="req">*</span> <span style="color:#3b82f6;font-size:11px;">(로그인 아이디)</span></label>
+        <div class="row">
+          <input class="inp" placeholder="000-00-00000" id="bizNum">
+          <button class="btn-sm" onclick="autofill()">인증확인</button>
+        </div>
+      </div>
+
+      <div id="autoFields" style="display:none">
+        <div class="field">
+          <label class="label">대표자명 <span class="req">*</span></label>
+          <div class="row" style="align-items:center">
+            <input class="inp auto" value="홍길동" readonly>
+            <button class="btn-sm" id="btn1" onclick="confirmField('btn1')">확인</button>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label">상호명 <span class="req">*</span></label>
+          <div class="row" style="align-items:center">
+            <input class="inp auto" value="드림가전" readonly>
+            <button class="btn-sm" id="btn2" onclick="confirmField('btn2')">확인</button>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label">사업장 주소 <span class="req">*</span></label>
+          <div class="row" style="align-items:center">
+            <input class="inp auto" value="서울 강남구 테헤란로 123" readonly>
+            <button class="btn-sm" id="btn3" onclick="confirmField('btn3')">확인</button>
+          </div>
+        </div>
+        <div class="roadview">📍 서울 강남구 테헤란로 123 <span class="ok">✓ 로드뷰 확인</span></div>
+
+        <div class="field">
+          <label class="label">추가 사업장 <span class="opt">(선택)</span></label>
+          <div class="yesno">
+            <button onclick="showExtra(true)">있음</button>
+            <button onclick="showExtra(false)" class="selected">없음</button>
+          </div>
+        </div>
+        <div id="extraAddr" style="display:none" class="field">
+          <label class="label">추가 사업장 주소</label>
+          <input class="inp" placeholder="추가 주소 입력">
+        </div>
+
+        <div class="sep">
+          <div class="sep-title">담당자 정보</div>
+          <div class="field">
+            <label class="label">담당자 이름 <span class="req">*</span></label>
+            <input class="inp" placeholder="홍길동">
+          </div>
+          <div class="field">
+            <label class="label">담당자 휴대폰 <span class="req">*</span></label>
+            <div class="row">
+              <input class="inp" placeholder="010-0000-0000">
+              <button class="btn-sm" onclick="sendSMS()">인증번호</button>
+            </div>
+          </div>
+          <div id="smsBox" style="display:none" class="sms-box">
+            <label class="label">인증번호 <span class="req">*</span></label>
+            <div class="row">
+              <input class="inp" placeholder="6자리 입력">
+              <button class="btn-sm" onclick="verifySMS()">확인</button>
+            </div>
+            <p id="smsOk" class="ok-msg" style="display:none">✓ 휴대폰 인증 완료</p>
+          </div>
+          <div class="field">
+            <label class="label">매장 전화번호 <span class="opt">(선택)</span></label>
+            <input class="inp" placeholder="02-0000-0000">
+          </div>
+          <div class="field">
+            <label class="label">이메일 주소 <span class="req">*</span></label>
+            <input class="inp" placeholder="example@email.com">
+          </div>
+        </div>
+
+        <div class="sep">
+          <div class="sep-title">비밀번호 설정</div>
+          <div class="field">
+            <label class="label">비밀번호 <span class="req">*</span></label>
+            <input class="inp" type="password" placeholder="8자리 이상">
+          </div>
+          <div class="field">
+            <label class="label">비밀번호 확인 <span class="req">*</span></label>
+            <input class="inp" type="password" placeholder="비밀번호 재입력">
+          </div>
+        </div>
+
+        <div class="sep">
+          <div class="sep-title">정산 계좌</div>
+          <div class="field">
+            <label class="label">은행 선택 <span class="req">*</span></label>
+            <select class="inp">
+              <option>은행을 선택하세요</option>
+              <option>국민은행</option><option>신한은행</option>
+              <option>우리은행</option><option>하나은행</option>
+              <option>농협은행</option><option>기업은행</option>
+              <option>카카오뱅크</option><option>토스뱅크</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="label">계좌번호 <span class="req">*</span></label>
+            <div class="row">
+              <input class="inp" placeholder="계좌번호 입력 (-제외)">
+              <button class="btn-sm" onclick="checkAccount()">조회</button>
+            </div>
+          </div>
+          <div id="accountResult" style="display:none" class="account-result">
+            <span>예금주</span>
+            <strong>✓ 드림가전 (주)</strong>
+          </div>
+        </div>
+
+        <p style="font-size:11px;color:#aaa;margin-bottom:8px;"><span style="color:#E24B4A;">*</span> 필수 입력 항목</p>
+        <button class="btn-next" onclick="goStep(2)">다음 →</button>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div id="step2" style="display:none">
+      <div class="section-title">2단계 — 규모 정보</div>
+      <div class="field">
+        <label class="label">직원수 <span class="req">*</span></label>
+        <div class="grid2">
+          <button class="opt-btn" onclick="sel(this,'emp')">1~5명</button>
+          <button class="opt-btn" onclick="sel(this,'emp')">6~20명</button>
+          <button class="opt-btn" onclick="sel(this,'emp')">21~50명</button>
+          <button class="opt-btn" onclick="sel(this,'emp')">51명 이상</button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label">연간 매출 규모 <span class="req">*</span></label>
+        <div class="grid2">
+          <button class="opt-btn" onclick="sel(this,'sales')">50억 미만</button>
+          <button class="opt-btn" onclick="sel(this,'sales')">50~200억</button>
+          <button class="opt-btn" onclick="sel(this,'sales')">200~500억</button>
+          <button class="opt-btn" onclick="sel(this,'sales')">500억 이상</button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label">주취급 브랜드 <span class="req">*</span> <span class="opt">(최대 2개)</span></label>
+        <div class="grid2">
+          <button class="opt-btn" onclick="selBrand(this)">삼성</button>
+          <button class="opt-btn" onclick="selBrand(this)">LG</button>
+          <button class="opt-btn" onclick="selBrand(this)">캐리어</button>
+          <button class="opt-btn" onclick="selBrand(this)">기타</button>
+        </div>
+        <p id="brandMsg" style="font-size:11px;color:#888;margin-top:4px;"></p>
+      </div>
+      <div class="row" style="gap:8px;margin-top:8px;">
+        <button class="btn-next" style="background:#f0f0f0;color:#1a1a1a;" onclick="goStep(1)">← 이전</button>
+        <button class="btn-next" onclick="goStep(3)">다음 →</button>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div id="step3" style="display:none">
+      <div class="section-title">3단계 — 취급 품목</div>
+      <label class="label" style="margin-bottom:8px;display:block;">취급 품목 선택 <span class="req">*</span> <span class="opt">(복수 선택)</span></label>
+      <div class="product-grid">
+        <button class="product-btn" onclick="selProduct(this)">📺 TV</button>
+        <button class="product-btn" onclick="selProduct(this)">🧊 냉장고</button>
+        <button class="product-btn" onclick="selProduct(this)">❄️ 에어컨</button>
+        <button class="product-btn" onclick="selProduct(this)">🫧 세탁기</button>
+        <button class="product-btn full" onclick="selProduct(this)">👔 의류관리기</button>
+      </div>
+      <div class="complete-box">
+        <div style="font-size:28px;">⏰</div>
+        <h3>가입 후 검토까지</h3>
+        <p>영업일 기준 1~2일 소요됩니다</p>
+      </div>
+      <div class="row" style="gap:8px;">
+        <button class="btn-next" style="background:#f0f0f0;color:#1a1a1a;" onclick="goStep(2)">← 이전</button>
+        <button class="btn-next" style="background:#1B4F8A;">가입 완료!</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let brandCount = 0;
+
+function autofill() {
+  document.getElementById('autoFields').style.display = 'block';
+}
+
+function confirmField(id) {
+  const btn = document.getElementById(id);
+  btn.textContent = '✓';
+  btn.classList.add('confirmed');
+  btn.disabled = true;
+}
+
+function showExtra(show) {
+  document.getElementById('extraAddr').style.display = show ? 'block' : 'none';
+}
+
+function sendSMS() {
+  document.getElementById('smsBox').style.display = 'block';
+}
+
+function verifySMS() {
+  document.getElementById('smsOk').style.display = 'block';
+}
+
+function checkAccount() {
+  document.getElementById('accountResult').style.display = 'flex';
+}
+
+function goStep(n) {
+  [1,2,3].forEach(i => {
+    document.getElementById('step'+i).style.display = i===n?'block':'none';
+    document.getElementById('d'+i).classList.toggle('active', i===n);
+  });
+  const labels = ['','1단계 — 사업자 인증','2단계 — 규모 정보','3단계 — 취급 품목'];
+  document.getElementById('stepLabel').textContent = labels[n];
+}
+
+function sel(btn, group) {
+  document.querySelectorAll('[onclick*="\''+group+'\'"]').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function selBrand(btn) {
+  if(btn.classList.contains('selected')) {
+    btn.classList.remove('selected'); brandCount--;
+  } else {
+    if(brandCount >= 2) { document.getElementById('brandMsg').textContent = '최대 2개까지 선택 가능합니다'; return; }
+    btn.classList.add('selected'); brandCount++;
+  }
+  document.getElementById('brandMsg').textContent = brandCount > 0 ? brandCount+'개 선택됨' : '';
+}
+
+function selProduct(btn) {
+  btn.classList.toggle('selected');
+}
+</script>
+</body>
+</html>

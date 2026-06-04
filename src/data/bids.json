@@ -1,0 +1,79 @@
+[
+  {
+    "id": "bid-001",
+    "requestId": "br-001",
+    "sellerId": "seller-001",
+    "sellerName": "박판매 가전",
+    "sellerRating": 4.8,
+    "items": [
+      {"id": "bi-001", "modelName": "삼성 QN65S95CAFXKR (OLED)", "price": 1850000, "sortOrder": 1},
+      {"id": "bi-002", "modelName": "삼성 QN65QN85CAFXKR (QLED)", "price": 1580000, "sortOrder": 2}
+    ],
+    "totalPrice": 1850000,
+    "installDate": "2026-06-07",
+    "installFeeIncluded": true,
+    "collectionService": "free",
+    "sellerMessage": "정품 삼성 OLED 최저가 보장. 당일 설치도 협의 가능합니다!",
+    "status": "pending",
+    "isRebid": false,
+    "createdAt": "2026-06-02T14:00:00Z",
+    "updatedAt": "2026-06-02T14:00:00Z"
+  },
+  {
+    "id": "bid-002",
+    "requestId": "br-001",
+    "sellerId": "seller-002",
+    "sellerName": "최베스트 전자",
+    "sellerRating": 4.5,
+    "items": [
+      {"id": "bi-003", "modelName": "LG OLED65C3KNA", "price": 1920000, "sortOrder": 1}
+    ],
+    "totalPrice": 1920000,
+    "installDate": "2026-06-08",
+    "installFeeIncluded": true,
+    "collectionService": "free",
+    "sellerMessage": "LG OLED 전문 판매점. 10년 이상 경력 설치 기사가 방문합니다.",
+    "status": "pending",
+    "isRebid": false,
+    "createdAt": "2026-06-02T15:30:00Z",
+    "updatedAt": "2026-06-02T15:30:00Z"
+  },
+  {
+    "id": "bid-003",
+    "requestId": "br-004",
+    "sellerId": "seller-002",
+    "sellerName": "최베스트 전자",
+    "sellerRating": 4.5,
+    "items": [
+      {"id": "bi-005", "modelName": "LG WashTower WD24VU", "price": 2100000, "sortOrder": 1}
+    ],
+    "totalPrice": 2100000,
+    "installDate": "2026-06-05",
+    "installFeeIncluded": true,
+    "collectionService": "free",
+    "sellerMessage": "워시타워 전문 설치. 기존 세탁기 무료 철거 포함.",
+    "status": "selected",
+    "isRebid": false,
+    "createdAt": "2026-05-30T10:00:00Z",
+    "updatedAt": "2026-06-01T11:00:00Z"
+  },
+  {
+    "id": "bid-004",
+    "requestId": "br-002",
+    "sellerId": "seller-001",
+    "sellerName": "박판매 가전",
+    "sellerRating": 4.8,
+    "items": [
+      {"id": "bi-006", "modelName": "삼성 RS80B5571B4", "price": 1450000, "sortOrder": 1}
+    ],
+    "totalPrice": 1450000,
+    "installDate": "2026-06-09",
+    "installFeeIncluded": true,
+    "collectionService": "paid",
+    "sellerMessage": "재고 보유 중. 빠른 배송 가능합니다.",
+    "status": "pending",
+    "isRebid": false,
+    "createdAt": "2026-06-02T16:00:00Z",
+    "updatedAt": "2026-06-02T16:00:00Z"
+  }
+]

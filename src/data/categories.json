@@ -1,0 +1,56 @@
+[
+  {
+    "id": "cat-001",
+    "name": "냉장고",
+    "slug": "refrigerator",
+    "icon": "🧊",
+    "description": "가정용 냉장고 및 김치냉장고",
+    "order": 1,
+    "isActive": true
+  },
+  {
+    "id": "cat-002",
+    "name": "세탁기",
+    "slug": "washing-machine",
+    "icon": "🫧",
+    "description": "드럼세탁기, 통돌이세탁기, 건조기",
+    "order": 2,
+    "isActive": true
+  },
+  {
+    "id": "cat-003",
+    "name": "에어컨",
+    "slug": "air-conditioner",
+    "icon": "❄️",
+    "description": "벽걸이, 스탠드, 시스템 에어컨",
+    "order": 3,
+    "isActive": true
+  },
+  {
+    "id": "cat-004",
+    "name": "TV",
+    "slug": "tv",
+    "icon": "📺",
+    "description": "OLED, QLED, LED TV",
+    "order": 4,
+    "isActive": true
+  },
+  {
+    "id": "cat-005",
+    "name": "청소기",
+    "slug": "vacuum-cleaner",
+    "icon": "🌀",
+    "description": "로봇청소기, 무선청소기, 유선청소기",
+    "order": 5,
+    "isActive": true
+  },
+  {
+    "id": "cat-006",
+    "name": "전자레인지",
+    "slug": "microwave",
+    "icon": "🍳",
+    "description": "전자레인지, 오븐레인지, 에어프라이어",
+    "order": 6,
+    "isActive": true
+  }
+]

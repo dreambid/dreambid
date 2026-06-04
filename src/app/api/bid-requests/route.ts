@@ -1,0 +1,47 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { readData, insertItem, generateId } from '@/lib/data';
+import type { BidRequest, CreateBidRequestInput } from '@/types';
+
+const CATEGORY_NAMES: Record<string, string> = {
+  tv: 'TV',
+  refrigerator: '냉장고',
+  'air-conditioner': '에어컨',
+  'washing-machine': '세탁기/건조기',
+  'clothing-care': '의류관리기',
+};
+
+export function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const consumerId = searchParams.get('consumerId');
+  const status = searchParams.get('status');
+
+  let requests = readData<BidRequest>('bid-requests.json');
+  if (consumerId) requests = requests.filter((r) => r.consumerId === consumerId);
+  if (status) requests = requests.filter((r) => r.status === status);
+
+  return NextResponse.json(requests);
+}
+
+export async function POST(req: NextRequest) {
+  const body: CreateBidRequestInput = await req.json();
+  const now = new Date().toISOString();
+  const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  const newRequest: BidRequest = {
+    id: generateId('br'),
+    consumerId: 'consumer-001',
+    category: body.category,
+    categoryName: CATEGORY_NAMES[body.category] ?? body.category,
+    specs: body.specs,
+    modelName: body.modelName ?? '',
+    status: 'open',
+    bidCount: 0,
+    selectedBidId: undefined,
+    expiresAt: expires,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  insertItem('bid-requests.json', newRequest);
+  return NextResponse.json(newRequest, { status: 201 });
+}
