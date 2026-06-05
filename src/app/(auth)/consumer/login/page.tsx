@@ -20,14 +20,14 @@ function LoginForm() {
       {/* 카드 헤더 */}
       <div className="px-6 pt-7 pb-5 border-b border-gray-100 text-center">
         <Link href="/custom" className="inline-block">
-          <h1 className="text-[22px] font-semibold text-[#1a1a1a] mb-1">DreamBid</h1>
+          <h1 className="text-[22px] font-semibold text-[#1a1a1a] mb-1">로그인 / 회원가입</h1>
         </Link>
-        <p className="text-[13px] text-gray-400">더 싸게, 더 안전하게</p>
+        <p className="text-[13px] text-gray-400">처음이신가요? 버튼 하나로 즉시 시작!</p>
       </div>
 
       {/* 소셜 로그인 버튼 목록 */}
       <div className="px-6 py-7">
-        <p className="text-[15px] font-semibold text-center text-[#1a1a1a] mb-5">1초 만에 시작하기</p>
+        <p className="text-[15px] font-semibold text-center text-[#1a1a1a] mb-5">기존 회원은 자동 로그인됩니다</p>
 
         {/* 카카오 로그인 */}
         <button
