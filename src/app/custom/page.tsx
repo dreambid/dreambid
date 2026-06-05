@@ -7,10 +7,10 @@ export default function ConsumerMainPage() {
       {/* 헤더 */}
       <header className="sticky top-0 z-50 border-b border-gray-100 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-2">
+          <Link href="/custom" className="flex items-center gap-2">
             <span className="text-2xl">🛒</span>
             <span className="text-xl font-bold text-blue-700">드림비드</span>
-          </div>
+          </Link>
           <nav className="flex items-center gap-4">
             <Link href="/consumer/login" className="text-sm text-gray-600 hover:text-blue-600">소비자 입장</Link>
             <Link href="/seller" className="text-sm text-gray-600 hover:text-blue-600">판매자 입장</Link>

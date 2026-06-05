@@ -19,7 +19,7 @@ function LoginForm() {
     <div className="bg-white rounded-2xl border border-gray-200 w-full max-w-[340px] overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.08)]">
       {/* 카드 헤더 */}
       <div className="px-6 pt-7 pb-5 border-b border-gray-100 text-center">
-        <Link href="/" className="inline-block">
+        <Link href="/custom" className="inline-block">
           <h1 className="text-[22px] font-semibold text-[#1a1a1a] mb-1">DreamBid</h1>
         </Link>
         <p className="text-[13px] text-gray-400">더 싸게, 더 안전하게</p>
@@ -67,7 +67,7 @@ function LoginForm() {
       </div>
 
       <div className="pb-6 text-center">
-        <Link href="/" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+        <Link href="/custom" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
           ← 홈으로 돌아가기
         </Link>
       </div>

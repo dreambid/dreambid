@@ -40,7 +40,7 @@ export function SellerHeader() {
           })}
         </nav>
         <div className="flex items-center gap-3">
-          <Link href="/" className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+          <Link href="/seller" className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
             🏠 홈
           </Link>
           <div className="h-5 w-px bg-gray-200" />

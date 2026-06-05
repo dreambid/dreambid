@@ -31,7 +31,7 @@ export function Header({ role, basketCount = 0 }: HeaderProps) {
     <header className="sticky top-0 z-40 border-b bg-white shadow-sm">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
         {/* 로고 */}
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/custom" className="flex items-center gap-2">
           <span className="text-2xl">🛒</span>
           <span className="text-xl font-bold text-blue-700">드림비드</span>
           {role && (
