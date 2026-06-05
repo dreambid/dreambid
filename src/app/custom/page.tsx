@@ -14,8 +14,12 @@ export default function ConsumerMainPage() {
           <nav className="flex items-center gap-4">
             <Link href="/consumer/login" className="text-sm text-gray-600 hover:text-blue-600">소비자 입장</Link>
             <Link href="/seller" className="text-sm text-gray-600 hover:text-blue-600">판매자 입장</Link>
-            <Link href="/consumer/login" className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
-              비딩 요청하기
+            <div className="h-5 w-px bg-gray-200" />
+            <Link href="/consumer/login" className="text-sm text-gray-600 hover:text-blue-600 transition-colors">
+              로그인
+            </Link>
+            <Link href="/consumer/login" className="rounded-lg border border-blue-600 px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 transition-colors">
+              회원가입
             </Link>
           </nav>
         </div>

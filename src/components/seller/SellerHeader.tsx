@@ -43,10 +43,13 @@ export function SellerHeader() {
           <Link href="/" className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
             🏠 홈
           </Link>
-          <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
-            승인됨
-          </span>
-          <span className="text-sm font-medium text-gray-700">박판매 가전</span>
+          <div className="h-5 w-px bg-gray-200" />
+          <Link href="/seller/login" className="text-sm text-gray-600 hover:text-green-700 transition-colors">
+            로그인
+          </Link>
+          <Link href="/seller/register" className="rounded-lg border border-green-600 px-3 py-1.5 text-sm font-medium text-green-600 hover:bg-green-50 transition-colors">
+            가입 신청
+          </Link>
         </div>
       </div>
     </header>
