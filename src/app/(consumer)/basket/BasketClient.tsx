@@ -1,15 +1,25 @@
 'use client';
+import { useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { BasketItem, Bid } from '@/types';
 import { formatPrice } from '@/lib/utils';
 import { CATEGORY_ICONS } from '@/lib/constants';
 import { Button } from '@/components/shared/Button';
+import { isConsumerLoggedIn } from '@/lib/auth';
 
 interface Props {
   items: Array<{ basketItem: BasketItem; bid: Bid }>;
 }
 
 export default function BasketClient({ items }: Props) {
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isConsumerLoggedIn()) {
+      router.replace('/consumer/login?from=/basket');
+    }
+  }, [router]);
   // 카테고리별 그룹화
   const grouped = items.reduce<Record<string, typeof items>>((acc, item) => {
     const key = item.basketItem.category;

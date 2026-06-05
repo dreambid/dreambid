@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const navItems = [
-  { label: '대시보드', href: '/seller' },
+  { label: '대시보드', href: '/seller/dashboard' },
   { label: '비딩 요청', href: '/seller/requests' },
   { label: '내 비딩', href: '/seller/bids' },
   { label: '거래/정산', href: '/seller/orders' },
@@ -23,10 +23,7 @@ export function SellerHeader() {
         </Link>
         <nav className="flex gap-1">
           {navItems.map((item) => {
-            const isActive =
-              item.href === '/seller'
-                ? pathname === '/seller'
-                : pathname.startsWith(item.href);
+            const isActive = pathname.startsWith(item.href);
             return (
               <Link
                 key={item.href}
@@ -42,7 +39,10 @@ export function SellerHeader() {
             );
           })}
         </nav>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <Link href="/" className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+            🏠 홈
+          </Link>
           <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
             승인됨
           </span>

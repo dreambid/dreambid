@@ -1,11 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Users, Store, ShoppingCart, Wallet,
-  BarChart3, FileText, Settings, ChevronRight,
+  BarChart3, FileText, Settings, ChevronRight, Home, LogOut,
 } from 'lucide-react';
+import { clearAdminLoggedIn } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
@@ -21,6 +22,7 @@ const NAV_ITEMS = [
 
 export default function AdminSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
 
   const isActive = (href: string) =>
     href === '/admin' ? pathname === '/admin' : pathname.startsWith(href);
@@ -58,8 +60,22 @@ export default function AdminSidebar() {
         ))}
       </nav>
 
-      <div className="px-4 py-4 border-t border-slate-700">
-        <p className="text-slate-500 text-xs text-center">DreamBid Admin v1.0</p>
+      <div className="px-3 py-4 border-t border-slate-700 space-y-1">
+        <Link
+          href="/"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+        >
+          <Home size={18} className="flex-shrink-0" />
+          홈으로
+        </Link>
+        <button
+          onClick={() => { clearAdminLoggedIn(); router.push('/admin/login'); }}
+          className="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:bg-red-900/40 hover:text-red-300 transition-colors"
+        >
+          <LogOut size={18} className="flex-shrink-0" />
+          로그아웃
+        </button>
+        <p className="text-slate-600 text-xs text-center pt-1">DreamBid Admin v1.0</p>
       </div>
     </aside>
   );

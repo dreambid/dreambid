@@ -1,14 +1,21 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ProductData, ProductCategory } from '@/types';
 import { Button } from '@/components/shared/Button';
 import { Modal } from '@/components/shared/Modal';
+import { isConsumerLoggedIn } from '@/lib/auth';
 
 interface Props { productData: ProductData; }
 
 export default function NewRequestClient({ productData }: Props) {
   const router = useRouter();
+
+  useEffect(() => {
+    if (!isConsumerLoggedIn()) {
+      router.replace('/consumer/login?from=/request/new');
+    }
+  }, [router]);
   const [phase, setPhase] = useState<'category' | 'steps' | 'model'>('category');
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | null>(null);
   const [currentStep, setCurrentStep] = useState(0);

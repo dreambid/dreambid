@@ -3,6 +3,7 @@ import { readData } from '@/lib/data';
 import type { BidRequest } from '@/types';
 import { RequestCard } from '@/components/consumer/RequestCard';
 import { Button } from '@/components/shared/Button';
+import { RequireConsumerAuth } from '@/components/shared/RequireConsumerAuth';
 
 export default function RequestsPage() {
   // 실제 서비스에서는 세션 기반. 여기서는 consumer-001로 고정
@@ -12,6 +13,7 @@ export default function RequestsPage() {
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   return (
+    <RequireConsumerAuth>
     <div className="mx-auto max-w-3xl px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
@@ -39,5 +41,6 @@ export default function RequestsPage() {
         </div>
       )}
     </div>
+    </RequireConsumerAuth>
   );
 }

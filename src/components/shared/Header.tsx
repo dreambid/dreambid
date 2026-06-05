@@ -1,4 +1,10 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { getConsumerUser, clearConsumerUser } from '@/lib/auth';
+import type { ConsumerUser } from '@/lib/auth';
 
 interface HeaderProps {
   role?: 'consumer' | 'seller' | 'admin';
@@ -7,6 +13,20 @@ interface HeaderProps {
 
 /* 역할별 헤더 — consumer/seller/admin 구분 */
 export function Header({ role, basketCount = 0 }: HeaderProps) {
+  const router = useRouter();
+  const [user, setUser] = useState<ConsumerUser | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setUser(getConsumerUser());
+    setMounted(true);
+  }, []);
+
+  function handleLogout() {
+    clearConsumerUser();
+    router.push('/');
+  }
+
   return (
     <header className="sticky top-0 z-40 border-b bg-white shadow-sm">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
@@ -49,6 +69,51 @@ export function Header({ role, basketCount = 0 }: HeaderProps) {
           )}
           {role === 'admin' && (
             <span className="text-sm font-medium text-gray-700">관리자 패널</span>
+          )}
+
+          {/* 인증 버튼 영역 (마운트 후 렌더링) */}
+          {mounted && role === 'consumer' && (
+            <div className="ml-2 flex items-center gap-2 border-l border-gray-200 pl-3">
+              {user ? (
+                <>
+                  <span className="text-sm text-gray-700 font-medium">{user.name}</span>
+                  <button
+                    onClick={handleLogout}
+                    className="text-sm text-gray-500 hover:text-red-600 transition-colors"
+                  >
+                    로그아웃
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/consumer/login"
+                    className="text-sm text-gray-600 hover:text-blue-600 transition-colors"
+                  >
+                    로그인
+                  </Link>
+                  <Link
+                    href="/consumer/login"
+                    className="rounded-lg border border-blue-600 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 transition-colors"
+                  >
+                    회원가입
+                  </Link>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* 소비자가 아닌 페이지에서도 로그인/회원가입 표시 */}
+          {mounted && !role && (
+            <div className="flex items-center gap-2">
+              <Link href="/consumer/login" className="text-sm text-gray-600 hover:text-blue-600">로그인</Link>
+              <Link
+                href="/consumer/login"
+                className="rounded-lg border border-blue-600 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50"
+              >
+                회원가입
+              </Link>
+            </div>
           )}
         </nav>
       </div>
