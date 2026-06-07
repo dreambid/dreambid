@@ -5,6 +5,8 @@ import type { ProductCategory } from '@/types';
 import { Button } from '@/components/shared/Button';
 import { Modal } from '@/components/shared/Modal';
 import type { RequestItem } from './NewRequestClient';
+import CategoryAdBanner from './CategoryAdBanner';
+import type { Ad } from '@/types/ad';
 
 interface Props {
   category: ProductCategory;
@@ -13,6 +15,7 @@ interface Props {
   total: number;
   onDone: (item: Omit<RequestItem, 'id'>, addAnother: boolean) => void;
   onBack: () => void;
+  activeAds: Ad[];
 }
 
 export default function CategoryConditionStep({
@@ -22,6 +25,7 @@ export default function CategoryConditionStep({
   total,
   onDone,
   onBack,
+  activeAds,
 }: Props) {
   const [subPhase, setSubPhase] = useState<'steps' | 'quantity'>('steps');
   const [stepIndex, setStepIndex] = useState(0);
@@ -148,6 +152,7 @@ export default function CategoryConditionStep({
               +
             </button>
           </div>
+          <CategoryAdBanner activeAds={activeAds} categoryId={category.id} />
           <div className="mt-8 space-y-3">
             <Button className="w-full" onClick={() => finish(false)}>
               {currentIndex >= total ? '입력 완료' : '다음 품목으로 →'}

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Users, Store, ShoppingCart, Wallet,
-  BarChart3, FileText, Settings, ChevronRight, Home, LogOut,
+  BarChart3, FileText, Settings, ChevronRight, Home, LogOut, Megaphone,
 } from 'lucide-react';
 import { clearAdminLoggedIn } from '@/lib/auth';
 import { cn } from '@/lib/utils';
@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { href: '/admin/settlements', label: '정산 관리', icon: Wallet },
   { href: '/admin/analytics', label: '통계/분석', icon: BarChart3 },
   { href: '/admin/content', label: '콘텐츠 관리', icon: FileText },
+  { href: '/admin/ads', label: '광고 관리', icon: Megaphone },
   { href: '/admin/settings', label: '시스템 설정', icon: Settings },
 ];
 

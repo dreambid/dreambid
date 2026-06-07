@@ -1,0 +1,32 @@
+[
+  {
+    "id": "ad-001",
+    "sellerId": "seller-001",
+    "sellerName": "박판매 가전",
+    "title": "TV 최저가 보장!",
+    "imageUrl": "",
+    "description": "삼성/LG 전 모델 최저가 견적. 당일 설치 가능",
+    "categories": ["tv", "main"],
+    "duration": "1month",
+    "contact": "010-1234-5678",
+    "status": "active",
+    "clickCount": 14,
+    "startDate": "2026-06-01T00:00:00.000Z",
+    "endDate": "2026-07-01T00:00:00.000Z",
+    "createdAt": "2026-05-28T00:00:00.000Z"
+  },
+  {
+    "id": "ad-002",
+    "sellerId": "seller-001",
+    "sellerName": "박판매 가전",
+    "title": "에어컨 설치 전문",
+    "imageUrl": "",
+    "description": "2시간 내 설치 완료. 무료 A/S 1년 보장",
+    "categories": ["air-conditioner"],
+    "duration": "2weeks",
+    "contact": "https://example.com",
+    "status": "pending",
+    "clickCount": 0,
+    "createdAt": "2026-06-05T00:00:00.000Z"
+  }
+]

@@ -4,3 +4,4 @@ export * from './user';
 export * from './seller';
 export * from './product';
 export * from './address';
+export * from './ad';

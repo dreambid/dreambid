@@ -1,8 +1,14 @@
 import Link from 'next/link';
 import ConsumerLandingHeader from '@/components/shared/ConsumerLandingHeader';
+import { readData } from '@/lib/data';
+import type { Ad } from '@/types/ad';
+import AdBanner from '@/components/shared/AdBanner';
 
 /* 드림비드 소비자 메인 — 역경매 메커니즘 소개 및 진입 경로 안내 */
 export default function ConsumerMainPage() {
+  const activeAds = readData<Ad>('ads.json').filter(
+    (a) => a.status === 'active' && a.categories.includes('main'),
+  );
   return (
     <div className="min-h-screen bg-white">
       <ConsumerLandingHeader />
@@ -40,6 +46,18 @@ export default function ConsumerMainPage() {
           </Link>
         </div>
       </section>
+
+      {/* 추천 판매점 광고 배너 */}
+      {activeAds.length > 0 && (
+        <section className="py-10 bg-gray-50">
+          <div className="mx-auto max-w-5xl px-4">
+            <h2 className="mb-6 text-xl font-bold text-gray-900">추천 판매점</h2>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <AdBanner ads={activeAds} size="large" max={2} />
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* 거래 프로세스 */}
       <section className="py-20">

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ProductData } from '@/types';
+import type { Ad } from '@/types/ad';
 import { isConsumerLoggedIn } from '@/lib/auth';
 import CategorySelectStep from './CategorySelectStep';
 import CategoryConditionStep from './CategoryConditionStep';
@@ -17,11 +18,11 @@ export interface RequestItem {
   quantity: number;
 }
 
-interface Props { productData: ProductData; }
+interface Props { productData: ProductData; activeAds: Ad[]; }
 
 type Phase = 'select' | 'input' | 'summary';
 
-export default function NewRequestClient({ productData }: Props) {
+export default function NewRequestClient({ productData, activeAds }: Props) {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>('select');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -125,6 +126,7 @@ export default function NewRequestClient({ productData }: Props) {
         total={total}
         onDone={handleItemDone}
         onBack={() => { setSelectedIds([]); setPhase('select'); }}
+        activeAds={activeAds}
       />
     );
   }
