@@ -13,9 +13,11 @@ interface Props {
   items: Array<{ basketItem: BasketItem; bid: Bid }>;
 }
 
-export default function BasketClient({ items }: Props) {
+export default function BasketClient({ items: initialItems }: Props) {
   const router = useRouter();
   const [phase, setPhase] = useState<'view' | 'checkout'>('view');
+  const [localItems, setLocalItems] = useState(initialItems);
+  const [removing, setRemoving] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isConsumerLoggedIn()) {
@@ -23,34 +25,42 @@ export default function BasketClient({ items }: Props) {
     }
   }, [router]);
 
+  async function removeItem(basketItemId: string) {
+    setRemoving(basketItemId);
+    try {
+      await fetch(`/api/basket/${basketItemId}`, { method: 'DELETE' });
+      setLocalItems((prev) => prev.filter((i) => i.basketItem.id !== basketItemId));
+    } finally {
+      setRemoving(null);
+    }
+  }
+
   if (phase === 'checkout') {
     return (
       <CheckoutFlow
-        items={items}
+        items={localItems}
         onBack={() => setPhase('view')}
         onComplete={() => router.push('/requests')}
       />
     );
   }
-  // 카테고리별 그룹화
-  const grouped = items.reduce<Record<string, typeof items>>((acc, item) => {
+
+  const grouped = localItems.reduce<Record<string, typeof localItems>>((acc, item) => {
     const key = item.basketItem.category;
     if (!acc[key]) acc[key] = [];
     acc[key].push(item);
     return acc;
   }, {});
 
-  const total = items.reduce((sum, i) => sum + i.bid.totalPrice, 0);
+  const total = localItems.reduce((sum, i) => sum + i.bid.totalPrice, 0);
 
-  if (items.length === 0) {
+  if (localItems.length === 0) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-16 text-center">
         <p className="mb-4 text-5xl">🛒</p>
         <p className="mb-2 text-xl font-semibold text-gray-700">비딩 바구니가 비어있습니다</p>
         <p className="mb-6 text-gray-500">마음에 드는 비딩을 담아보세요</p>
-        <Link href="/requests">
-          <Button>내 비딩 요청 보기</Button>
-        </Link>
+        <Link href="/requests"><Button>내 비딩 요청 보기</Button></Link>
       </div>
     );
   }
@@ -67,22 +77,22 @@ export default function BasketClient({ items }: Props) {
               {groupItems[0].basketItem.categoryName}
             </h2>
             {groupItems.map(({ basketItem, bid }) => (
-              <div
-                key={basketItem.id}
-                className="mb-3 flex items-start justify-between rounded-xl bg-gray-50 p-4"
-              >
+              <div key={basketItem.id} className="mb-3 flex items-start justify-between rounded-xl bg-gray-50 p-4">
                 <div>
                   <p className="font-medium text-gray-900">{bid.sellerName}</p>
                   <p className="text-sm text-gray-500">{bid.items[0]?.modelName}</p>
                   <p className="text-xs text-gray-400">
-                    설치: {bid.installDate} · 설치비{' '}
-                    {bid.installFeeIncluded ? '포함' : '별도'}
+                    설치: {bid.installDate} · 설치비 {bid.installFeeIncluded ? '포함' : '별도'}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className="font-bold text-blue-700">{formatPrice(bid.totalPrice)}</p>
-                  <button className="mt-1 text-xs text-red-400 hover:text-red-600">
-                    제거
+                  <button
+                    onClick={() => removeItem(basketItem.id)}
+                    disabled={removing === basketItem.id}
+                    className="mt-1 text-xs text-red-400 hover:text-red-600 disabled:opacity-50 transition-colors"
+                  >
+                    {removing === basketItem.id ? '제거 중...' : '제거'}
                   </button>
                 </div>
               </div>
@@ -91,7 +101,6 @@ export default function BasketClient({ items }: Props) {
         ))}
       </div>
 
-      {/* 합계 및 결제 */}
       <div className="mt-6 rounded-2xl border bg-white p-5 shadow-sm">
         <div className="mb-4 flex items-center justify-between">
           <span className="text-gray-600">총 합계</span>

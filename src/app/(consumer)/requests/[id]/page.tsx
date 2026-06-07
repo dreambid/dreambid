@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation';
 import { findById, readData } from '@/lib/data';
 import type { BidRequest, Bid } from '@/types';
-import { BidCard } from '@/components/consumer/BidCard';
 import { Badge } from '@/components/shared/Badge';
 import {
   getBidRequestStatusLabel,
@@ -11,6 +10,7 @@ import {
 } from '@/lib/utils';
 import { CATEGORY_ICONS } from '@/lib/constants';
 import RequestDetailClient from './RequestDetailClient';
+import BidSelectClient from '@/components/consumer/BidSelectClient';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -82,16 +82,11 @@ export default async function RequestDetailPage({ params }: Props) {
           <p className="mt-1 text-sm text-gray-400">보통 수 시간 내에 비딩이 도착합니다</p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {sortedBids.map((bid, index) => (
-            <BidCard
-              key={bid.id}
-              bid={bid}
-              isLowest={index === 0}
-              requestStatus={request.status}
-            />
-          ))}
-        </div>
+        <BidSelectClient
+          bids={sortedBids}
+          requestId={request.id}
+          canAccept={['open', 'bidding'].includes(request.status)}
+        />
       )}
     </div>
   );

@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Save, CheckCircle } from 'lucide-react';
+
+const STORAGE_KEY = 'dreambid_admin_settings';
 
 interface Settings {
   commissionRate: number;
@@ -25,12 +27,22 @@ export default function SettingsClient() {
   const [settings, setSettings] = useState<Settings>(DEFAULTS);
   const [saved, setSaved] = useState(false);
 
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) setSettings({ ...DEFAULTS, ...JSON.parse(stored) });
+    } catch {}
+  }, []);
+
   const set = (key: keyof Settings, value: number) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
     setSaved(false);
   };
 
   const handleSave = () => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    } catch {}
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
