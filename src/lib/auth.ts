@@ -42,3 +42,34 @@ export function clearAdminLoggedIn(): void {
 }
 
 export const ADMIN_CREDENTIALS = { id: 'admin', password: 'admin1234' };
+
+/* ── 판매자 세션 ── */
+
+const SELLER_KEY = 'dreambid_seller';
+
+export interface SellerUser {
+  name: string;
+  bizNum?: string;
+}
+
+export function getSellerUser(): SellerUser | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(SELLER_KEY);
+    return raw ? (JSON.parse(raw) as SellerUser) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setSellerUser(user: SellerUser): void {
+  localStorage.setItem(SELLER_KEY, JSON.stringify(user));
+}
+
+export function clearSellerUser(): void {
+  localStorage.removeItem(SELLER_KEY);
+}
+
+export function isSellerLoggedIn(): boolean {
+  return getSellerUser() !== null;
+}

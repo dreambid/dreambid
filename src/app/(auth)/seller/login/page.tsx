@@ -2,8 +2,11 @@
 // 판매자 로그인 페이지 — 사업자등록번호 + 비밀번호 입력
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { setSellerUser } from '@/lib/auth';
 
 export default function SellerLoginPage() {
+  const router = useRouter();
   const [bizNum, setBizNum] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -23,7 +26,8 @@ export default function SellerLoginPage() {
       return;
     }
     setError('');
-    // TODO: 서버 로그인 API 연동
+    setSellerUser({ name: '판매자', bizNum: bizNum.trim() });
+    router.replace('/seller/dashboard');
   }
 
   return (

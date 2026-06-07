@@ -1,29 +1,11 @@
 import Link from 'next/link';
+import ConsumerLandingHeader from '@/components/shared/ConsumerLandingHeader';
 
 /* 드림비드 소비자 메인 — 역경매 메커니즘 소개 및 진입 경로 안내 */
 export default function ConsumerMainPage() {
   return (
     <div className="min-h-screen bg-white">
-      {/* 헤더 */}
-      <header className="sticky top-0 z-50 border-b border-gray-100 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <Link href="/custom" className="flex items-center gap-2">
-            <span className="text-2xl">🛒</span>
-            <span className="text-xl font-bold text-blue-700">드림비드</span>
-          </Link>
-          <nav className="flex items-center gap-4">
-            <Link href="/consumer/login" className="text-sm text-gray-600 hover:text-blue-600">소비자 입장</Link>
-            <Link href="/seller" className="text-sm text-gray-600 hover:text-blue-600">판매자 입장</Link>
-            <div className="h-5 w-px bg-gray-200" />
-            <Link href="/consumer/login" className="text-sm text-gray-600 hover:text-blue-600 transition-colors">
-              로그인
-            </Link>
-            <Link href="/consumer/login" className="rounded-lg border border-blue-600 px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 transition-colors">
-              회원가입
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <ConsumerLandingHeader />
 
       {/* 히어로 섹션 */}
       <section className="bg-gradient-to-br from-blue-600 to-blue-800 py-24 text-white">
