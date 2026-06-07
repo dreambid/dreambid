@@ -1,5 +1,5 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { BasketItem, Bid } from '@/types';
@@ -7,6 +7,7 @@ import { formatPrice } from '@/lib/utils';
 import { CATEGORY_ICONS } from '@/lib/constants';
 import { Button } from '@/components/shared/Button';
 import { isConsumerLoggedIn } from '@/lib/auth';
+import CheckoutFlow from './CheckoutFlow';
 
 interface Props {
   items: Array<{ basketItem: BasketItem; bid: Bid }>;
@@ -14,12 +15,23 @@ interface Props {
 
 export default function BasketClient({ items }: Props) {
   const router = useRouter();
+  const [phase, setPhase] = useState<'view' | 'checkout'>('view');
 
   useEffect(() => {
     if (!isConsumerLoggedIn()) {
       router.replace('/consumer/login?from=/basket');
     }
   }, [router]);
+
+  if (phase === 'checkout') {
+    return (
+      <CheckoutFlow
+        items={items}
+        onBack={() => setPhase('view')}
+        onComplete={() => router.push('/requests')}
+      />
+    );
+  }
   // 카테고리별 그룹화
   const grouped = items.reduce<Record<string, typeof items>>((acc, item) => {
     const key = item.basketItem.category;
@@ -88,8 +100,8 @@ export default function BasketClient({ items }: Props) {
         <p className="mb-4 text-xs text-gray-400">
           에스크로 결제 방식 — 설치 완료 확인 후 판매자에게 정산됩니다
         </p>
-        <Button className="w-full" size="lg">
-          결제하기
+        <Button className="w-full" size="lg" onClick={() => setPhase('checkout')}>
+          요청하기
         </Button>
       </div>
     </div>

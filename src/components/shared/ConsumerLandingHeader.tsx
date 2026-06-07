@@ -24,7 +24,7 @@ function CloseIcon() {
 const authLinks = [
   { href: '/basket', label: '🛒 장바구니' },
   { href: '/requests', label: '📋 내 요청' },
-  { href: '/requests', label: '👤 내 정보' },
+  { href: '/profile', label: '👤 내 정보' },
 ];
 
 /* /custom 랜딩 전용 헤더 */
