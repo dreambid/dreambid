@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { setConsumerUser } from '@/lib/auth';
+import { setConsumerCookie } from '@/lib/session';
 
 function LoginForm() {
   const router = useRouter();
@@ -12,6 +13,7 @@ function LoginForm() {
 
   function handleLogin(provider: 'kakao' | 'naver' | 'google' | 'apple', name: string) {
     setConsumerUser({ name, provider });
+    setConsumerCookie({ consumerId: 'consumer-001', name, provider });
     router.replace(from);
   }
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readData, insertItem, generateId } from '@/lib/data';
 import type { BidRequest, CreateBidRequestInput } from '@/types';
+import { requireConsumerApi } from '@/lib/serverSession';
 
 const CATEGORY_NAMES: Record<string, string> = {
   tv: 'TV',
@@ -11,25 +12,31 @@ const CATEGORY_NAMES: Record<string, string> = {
 };
 
 export function GET(req: NextRequest) {
+  const session = requireConsumerApi(req);
+  if (session instanceof NextResponse) return session;
+
   const { searchParams } = new URL(req.url);
-  const consumerId = searchParams.get('consumerId');
   const status = searchParams.get('status');
 
-  let requests = readData<BidRequest>('bid-requests.json');
-  if (consumerId) requests = requests.filter((r) => r.consumerId === consumerId);
+  let requests = readData<BidRequest>('bid-requests.json').filter(
+    (r) => r.consumerId === session.consumerId,
+  );
   if (status) requests = requests.filter((r) => r.status === status);
 
   return NextResponse.json(requests);
 }
 
 export async function POST(req: NextRequest) {
+  const session = requireConsumerApi(req);
+  if (session instanceof NextResponse) return session;
+
   const body: CreateBidRequestInput = await req.json();
   const now = new Date().toISOString();
   const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
   const newRequest: BidRequest = {
     id: generateId('br'),
-    consumerId: 'consumer-001',
+    consumerId: session.consumerId,
     category: body.category,
     categoryName: CATEGORY_NAMES[body.category] ?? body.category,
     specs: body.specs,

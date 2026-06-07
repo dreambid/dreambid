@@ -2,8 +2,7 @@ import { readData } from '@/lib/data';
 import type { Order } from '@/types';
 import { formatPrice } from '@/lib/utils';
 import { Badge } from '@/components/shared/Badge';
-
-const MY_SELLER_ID = 'seller-001';
+import { getSellerServerSession } from '@/lib/serverSession';
 
 const orderStatusLabel: Record<string, string> = {
   payment_completed: '결제완료',
@@ -23,7 +22,10 @@ const orderStatusColor: Record<string, string> = {
   disputed: 'bg-red-100 text-red-600',
 };
 
-export default function SellerOrdersPage() {
+export default async function SellerOrdersPage() {
+  const session = await getSellerServerSession();
+  const MY_SELLER_ID = session?.sellerId ?? 'seller-001';
+
   const orders = readData<Order>('orders.json').filter((o) => o.sellerId === MY_SELLER_ID);
   const totalRevenue = orders
     .filter((o) => o.status === 'settled')

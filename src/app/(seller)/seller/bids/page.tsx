@@ -1,10 +1,12 @@
 import { readData } from '@/lib/data';
 import type { Bid, BidRequest } from '@/types';
 import SellerBidsClient from './SellerBidsClient';
+import { getSellerServerSession } from '@/lib/serverSession';
 
-const MY_SELLER_ID = 'seller-001';
+export default async function SellerBidsPage() {
+  const session = await getSellerServerSession();
+  const MY_SELLER_ID = session?.sellerId ?? 'seller-001';
 
-export default function SellerBidsPage() {
   const myBids = readData<Bid>('bids.json').filter((b) => b.sellerId === MY_SELLER_ID);
   const requests = readData<BidRequest>('bid-requests.json');
 

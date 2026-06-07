@@ -4,15 +4,17 @@ import type { BidRequest, Bid } from '@/types';
 import { getSpecLabel, formatRelativeTime, formatPrice } from '@/lib/utils';
 import { CATEGORY_ICONS } from '@/lib/constants';
 import BidSubmitForm from './BidSubmitForm';
+import { getSellerServerSession } from '@/lib/serverSession';
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
-const MY_SELLER_ID = 'seller-001';
-
 export default async function SellerRequestDetailPage({ params }: Props) {
   const { id } = await params;
+  const session = await getSellerServerSession();
+  const MY_SELLER_ID = session?.sellerId ?? 'seller-001';
+
   const request = findById<BidRequest>('bid-requests.json', id);
   if (!request) notFound();
 

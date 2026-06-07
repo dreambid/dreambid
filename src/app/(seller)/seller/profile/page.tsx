@@ -2,8 +2,7 @@ import { findById } from '@/lib/data';
 import type { Seller } from '@/types';
 import { formatDate } from '@/lib/utils';
 import { Badge } from '@/components/shared/Badge';
-
-const MY_SELLER_ID = 'seller-001';
+import { getSellerServerSession } from '@/lib/serverSession';
 
 const statusLabel: Record<string, string> = {
   pending: '심사중',
@@ -25,7 +24,10 @@ const brandLabel: Record<string, string> = {
   carrier: '캐리어',
 };
 
-export default function SellerProfilePage() {
+export default async function SellerProfilePage() {
+  const session = await getSellerServerSession();
+  const MY_SELLER_ID = session?.sellerId ?? 'seller-001';
+
   const seller = findById<Seller>('sellers.json', MY_SELLER_ID);
 
   if (!seller) {

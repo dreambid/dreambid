@@ -39,10 +39,10 @@ export default function SellerAdsPage() {
       </div>
 
       {view === 'list' ? (
-        <AdStatusList sellerId="seller-001" />
+        <AdStatusList sellerId={seller.sellerId ?? 'seller-001'} />
       ) : (
         <AdForm
-          sellerId="seller-001"
+          sellerId={seller.sellerId ?? 'seller-001'}
           sellerName={seller.name}
           onSuccess={() => setView('list')}
         />

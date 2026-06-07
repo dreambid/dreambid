@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { setAdminLoggedIn, ADMIN_CREDENTIALS } from '@/lib/auth';
+import { setAdminCookie } from '@/lib/session';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -20,6 +21,7 @@ export default function AdminLoginPage() {
     setTimeout(() => {
       if (id === ADMIN_CREDENTIALS.id && password === ADMIN_CREDENTIALS.password) {
         setAdminLoggedIn();
+        setAdminCookie();
         router.replace('/admin');
       } else {
         setError('아이디 또는 비밀번호가 올바르지 않습니다.');

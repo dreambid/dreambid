@@ -1,10 +1,14 @@
 import { readData, findById } from '@/lib/data';
 import type { BasketItem, Bid } from '@/types';
 import BasketClient from './BasketClient';
+import { getConsumerServerSession } from '@/lib/serverSession';
 
-export default function BasketPage() {
+export default async function BasketPage() {
+  const session = await getConsumerServerSession();
+  const consumerId = session?.consumerId ?? '';
+
   const basket = readData<BasketItem>('basket.json').filter(
-    (b) => b.consumerId === 'consumer-001',
+    (b) => b.consumerId === consumerId,
   );
 
   const bidsWithDetails = basket

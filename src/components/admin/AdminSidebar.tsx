@@ -7,6 +7,7 @@ import {
   BarChart3, FileText, Settings, ChevronRight, Home, LogOut, Megaphone,
 } from 'lucide-react';
 import { clearAdminLoggedIn } from '@/lib/auth';
+import { clearAdminCookie } from '@/lib/session';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
@@ -70,7 +71,7 @@ export default function AdminSidebar() {
           대시보드
         </Link>
         <button
-          onClick={() => { clearAdminLoggedIn(); router.push('/admin/login'); }}
+          onClick={() => { clearAdminLoggedIn(); clearAdminCookie(); router.push('/admin/login'); }}
           className="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:bg-red-900/40 hover:text-red-300 transition-colors"
         >
           <LogOut size={18} className="flex-shrink-0" />

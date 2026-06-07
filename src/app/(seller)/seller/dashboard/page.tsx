@@ -3,10 +3,12 @@ import { readData, findById } from '@/lib/data';
 import type { BidRequest, Bid, Seller, Order } from '@/types';
 import { formatPrice, formatRelativeTime } from '@/lib/utils';
 import { CATEGORY_ICONS } from '@/lib/constants';
+import { getSellerServerSession } from '@/lib/serverSession';
 
-const MY_SELLER_ID = 'seller-001';
+export default async function SellerDashboardPage() {
+  const session = await getSellerServerSession();
+  const MY_SELLER_ID = session?.sellerId ?? 'seller-001';
 
-export default function SellerDashboardPage() {
   const seller = findById<Seller>('sellers.json', MY_SELLER_ID)!;
   const allRequests = readData<BidRequest>('bid-requests.json');
   const myBids = readData<Bid>('bids.json').filter((b) => b.sellerId === MY_SELLER_ID);

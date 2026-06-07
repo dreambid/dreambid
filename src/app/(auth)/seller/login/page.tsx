@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { setSellerUser } from '@/lib/auth';
+import { setSellerCookie } from '@/lib/session';
 
 export default function SellerLoginPage() {
   const router = useRouter();
@@ -26,7 +27,8 @@ export default function SellerLoginPage() {
       return;
     }
     setError('');
-    setSellerUser({ name: '판매자', bizNum: bizNum.trim() });
+    setSellerUser({ name: '판매자', bizNum: bizNum.trim(), sellerId: 'seller-001' });
+    setSellerCookie({ sellerId: 'seller-001', name: '판매자', bizNum: bizNum.trim() });
     router.replace('/seller/dashboard');
   }
 

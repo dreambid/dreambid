@@ -4,12 +4,14 @@ import type { BidRequest } from '@/types';
 import { RequestCard } from '@/components/consumer/RequestCard';
 import { Button } from '@/components/shared/Button';
 import { RequireConsumerAuth } from '@/components/shared/RequireConsumerAuth';
+import { getConsumerServerSession } from '@/lib/serverSession';
 
-export default function RequestsPage() {
-  // 실제 서비스에서는 세션 기반. 여기서는 consumer-001로 고정
-  const allRequests = readData<BidRequest>('bid-requests.json');
-  const myRequests = allRequests
-    .filter((r) => r.consumerId === 'consumer-001')
+export default async function RequestsPage() {
+  const session = await getConsumerServerSession();
+  const consumerId = session?.consumerId ?? '';
+
+  const myRequests = readData<BidRequest>('bid-requests.json')
+    .filter((r) => r.consumerId === consumerId)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   return (

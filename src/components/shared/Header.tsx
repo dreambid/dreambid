@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getConsumerUser, clearConsumerUser } from '@/lib/auth';
 import type { ConsumerUser } from '@/lib/auth';
+import { clearConsumerCookie } from '@/lib/session';
 
 function HamburgerIcon() {
   return (
@@ -35,6 +36,7 @@ export function Header() {
 
   function logout() {
     clearConsumerUser();
+    clearConsumerCookie();
     setUser(null);
     setOpen(false);
     router.push('/custom');

@@ -50,6 +50,7 @@ const SELLER_KEY = 'dreambid_seller';
 export interface SellerUser {
   name: string;
   bizNum?: string;
+  sellerId?: string;
 }
 
 export function getSellerUser(): SellerUser | null {
