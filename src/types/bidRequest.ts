@@ -39,8 +39,6 @@ export interface CreateBidRequestInput {
   deliveryDate?: string;
   recyclablePickup?: boolean;
   liftRequired?: boolean;
-  budgetMin?: string;
-  budgetMax?: string;
   memo?: string;
   deliveryRecipient?: string;
   deliveryPhone?: string;

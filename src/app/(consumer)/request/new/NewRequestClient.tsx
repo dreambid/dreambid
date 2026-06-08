@@ -21,11 +21,9 @@ export interface RequestItem {
 }
 
 export interface CommonOptions {
-  deliveryDate: string;       // 희망 배송일
+  deliveryDate: string;       // 희망 배송일 ('' = 빠를수록 좋아요)
   recyclablePickup: boolean;  // 폐가전 무상수거
   liftRequired: boolean;      // 사다리차 지원 필요
-  budgetMin: string;          // 희망 최소 예산 (만원)
-  budgetMax: string;          // 희망 최대 예산 (만원)
   memo: string;               // 자유 추가 요청사항
 }
 
@@ -33,8 +31,6 @@ const DEFAULT_OPTIONS: CommonOptions = {
   deliveryDate: '',
   recyclablePickup: false,
   liftRequired: false,
-  budgetMin: '',
-  budgetMax: '',
   memo: '',
 };
 

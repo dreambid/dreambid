@@ -19,7 +19,7 @@ interface Props {
 const today = new Date().toISOString().split('T')[0];
 
 export default function RequestSummaryStep({
-  items, categories, onEdit, onDelete, onAddMore, onSubmit, isSubmitting,
+  items, categories, onEdit, onDelete, onAddMore, onSubmit,
   commonOptions, onCommonOptionsChange,
 }: Props) {
   function getSpecLabel(categoryId: string, stepId: string, value: string) {
@@ -31,23 +31,7 @@ export default function RequestSummaryStep({
     onCommonOptionsChange({ ...commonOptions, [key]: value });
   }
 
-  const yesNo = (key: 'recyclablePickup' | 'liftRequired', label: string) => (
-    <div>
-      <p className="mb-1.5 text-sm font-medium text-gray-700">{label}</p>
-      <div className="flex gap-2">
-        {[true, false].map((v) => (
-          <button key={String(v)} onClick={() => set(key, v)}
-            className={`flex-1 rounded-xl border-2 py-2.5 text-sm font-medium transition-colors ${
-              commonOptions[key] === v
-                ? 'border-blue-500 bg-blue-50 text-blue-700'
-                : 'border-gray-200 text-gray-600 hover:border-gray-300'
-            }`}>
-            {v ? '예' : '아니오'}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
+  const isAsap = commonOptions.deliveryDate === '';
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
@@ -94,45 +78,73 @@ export default function RequestSummaryStep({
 
         {/* 희망 배송일 */}
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">희망 배송일</label>
-          <input type="date" min={today} value={commonOptions.deliveryDate}
-            onChange={(e) => set('deliveryDate', e.target.value)}
-            className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
-        </div>
-
-        {yesNo('recyclablePickup', '폐가전 무상수거 필요')}
-        {yesNo('liftRequired', '사다리차 지원 필요')}
-      </div>
-
-      {/* ── 견적 조건 ── */}
-      <div className="mb-6 rounded-2xl border bg-white p-5 shadow-sm space-y-5">
-        <h2 className="font-bold text-gray-900">💰 견적 조건</h2>
-
-        {/* 희망 예산 범위 */}
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">
-            희망 총 예산 범위 <span className="font-normal text-gray-400">(만원 단위)</span>
-          </label>
-          <div className="flex items-center gap-2">
-            <input type="number" min="0" placeholder="최소" value={commonOptions.budgetMin}
-              onChange={(e) => set('budgetMin', e.target.value)}
-              className="flex-1 rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
-            <span className="text-gray-400">~</span>
-            <input type="number" min="0" placeholder="최대" value={commonOptions.budgetMax}
-              onChange={(e) => set('budgetMax', e.target.value)}
-              className="flex-1 rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
-            <span className="text-sm text-gray-500 whitespace-nowrap">만원</span>
+          <p className="mb-2 text-sm font-medium text-gray-700">희망 배송일</p>
+          <div className="space-y-2">
+            <label className="flex cursor-pointer select-none items-center gap-2">
+              <input
+                type="radio"
+                name="deliveryMode"
+                checked={isAsap}
+                onChange={() => set('deliveryDate', '')}
+                className="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-700">빠를수록 좋아요</span>
+            </label>
+            <label className="flex cursor-pointer select-none items-center gap-2">
+              <input
+                type="radio"
+                name="deliveryMode"
+                checked={!isAsap}
+                onChange={() => set('deliveryDate', today)}
+                className="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-700">설치일 지정</span>
+            </label>
+            {!isAsap && (
+              <input
+                type="date"
+                min={today}
+                value={commonOptions.deliveryDate}
+                onChange={(e) => set('deliveryDate', e.target.value)}
+                className="ml-6 rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            )}
           </div>
         </div>
 
-        {/* 자유 요청사항 */}
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">추가 요청사항</label>
-          <textarea rows={3} placeholder="예: 사은품 요망, 특정 색상 선호, 설치 시 기존 가구 이동 필요 등"
-            value={commonOptions.memo}
-            onChange={(e) => set('memo', e.target.value)}
-            className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm resize-none focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
-        </div>
+        {/* 폐가전 무상수거 */}
+        <label className="flex cursor-pointer select-none items-center gap-3">
+          <input
+            type="checkbox"
+            checked={commonOptions.recyclablePickup}
+            onChange={(e) => set('recyclablePickup', e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <span className="text-sm text-gray-700">폐가전 무상수거 신청</span>
+        </label>
+
+        {/* 사다리차 */}
+        <label className="flex cursor-pointer select-none items-center gap-3">
+          <input
+            type="checkbox"
+            checked={commonOptions.liftRequired}
+            onChange={(e) => set('liftRequired', e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <span className="text-sm text-gray-700">사다리차 지원 필요</span>
+        </label>
+      </div>
+
+      {/* ── 추가 요청사항 ── */}
+      <div className="mb-6 rounded-2xl border bg-white p-5 shadow-sm">
+        <h2 className="mb-4 font-bold text-gray-900">💬 추가 요청사항</h2>
+        <textarea
+          rows={3}
+          placeholder="예: 사은품 요망, 특정 색상 선호, 설치 시 기존 가구 이동 필요 등"
+          value={commonOptions.memo}
+          onChange={(e) => set('memo', e.target.value)}
+          className="w-full resize-none rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        />
       </div>
 
       {/* 제출 버튼 */}
