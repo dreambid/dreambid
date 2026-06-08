@@ -47,6 +47,19 @@ export async function POST(req: NextRequest) {
     expiresAt: expires,
     createdAt: now,
     updatedAt: now,
+    quantity: body.quantity,
+    deliveryDate: body.deliveryDate,
+    recyclablePickup: body.recyclablePickup,
+    liftRequired: body.liftRequired,
+    budgetMin: body.budgetMin,
+    budgetMax: body.budgetMax,
+    memo: body.memo,
+    deliveryRecipient: body.deliveryRecipient,
+    deliveryPhone: body.deliveryPhone,
+    deliveryZipCode: body.deliveryZipCode,
+    deliveryAddress: body.deliveryAddress,
+    deliveryAddressDetail: body.deliveryAddressDetail,
+    deliveryLabel: body.deliveryLabel,
   };
 
   insertItem('bid-requests.json', newRequest);

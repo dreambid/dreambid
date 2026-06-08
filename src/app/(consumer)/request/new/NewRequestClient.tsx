@@ -4,10 +4,12 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ProductData } from '@/types';
 import type { Ad } from '@/types/ad';
+import type { AddressInput } from '@/types/address';
 import { isConsumerLoggedIn } from '@/lib/auth';
 import CategorySelectStep from './CategorySelectStep';
 import CategoryConditionStep from './CategoryConditionStep';
 import RequestSummaryStep from './RequestSummaryStep';
+import RequestDeliveryStep from './RequestDeliveryStep';
 
 export interface RequestItem {
   id: string;
@@ -18,9 +20,27 @@ export interface RequestItem {
   quantity: number;
 }
 
+export interface CommonOptions {
+  deliveryDate: string;       // 희망 배송일
+  recyclablePickup: boolean;  // 폐가전 무상수거
+  liftRequired: boolean;      // 사다리차 지원 필요
+  budgetMin: string;          // 희망 최소 예산 (만원)
+  budgetMax: string;          // 희망 최대 예산 (만원)
+  memo: string;               // 자유 추가 요청사항
+}
+
+const DEFAULT_OPTIONS: CommonOptions = {
+  deliveryDate: '',
+  recyclablePickup: false,
+  liftRequired: false,
+  budgetMin: '',
+  budgetMax: '',
+  memo: '',
+};
+
 interface Props { productData: ProductData; activeAds: Ad[]; }
 
-type Phase = 'select' | 'input' | 'summary';
+type Phase = 'select' | 'input' | 'summary' | 'delivery';
 
 export default function NewRequestClient({ productData, activeAds }: Props) {
   const router = useRouter();
@@ -32,6 +52,8 @@ export default function NewRequestClient({ productData, activeAds }: Props) {
   const [inputKey, setInputKey] = useState(0);
   const [items, setItems] = useState<RequestItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [commonOptions, setCommonOptions] = useState<CommonOptions>(DEFAULT_OPTIONS);
+  const [deliveryInfo, setDeliveryInfo] = useState<AddressInput | null>(null);
 
   useEffect(() => {
     if (!isConsumerLoggedIn()) {
@@ -85,7 +107,7 @@ export default function NewRequestClient({ productData, activeAds }: Props) {
     setPhase('input');
   }
 
-  async function handleSubmit() {
+  async function handleSubmit(delivery: AddressInput | null = deliveryInfo) {
     setIsSubmitting(true);
     try {
       for (const item of items) {
@@ -96,6 +118,15 @@ export default function NewRequestClient({ productData, activeAds }: Props) {
             category: item.categoryId,
             specs: item.specs,
             quantity: item.quantity,
+            ...commonOptions,
+            ...(delivery && {
+              deliveryRecipient: delivery.recipient,
+              deliveryPhone: delivery.phone,
+              deliveryZipCode: delivery.zipCode,
+              deliveryAddress: delivery.address,
+              deliveryAddressDetail: delivery.addressDetail,
+              deliveryLabel: delivery.label,
+            }),
           }),
         });
       }
@@ -125,8 +156,19 @@ export default function NewRequestClient({ productData, activeAds }: Props) {
         currentIndex={currentIndex}
         total={total}
         onDone={handleItemDone}
-        onBack={() => { setSelectedIds([]); setPhase('select'); }}
+        onBack={() => { setPhase('select'); }}
         activeAds={activeAds}
+      />
+    );
+  }
+
+  if (phase === 'delivery') {
+    return (
+      <RequestDeliveryStep
+        initial={deliveryInfo}
+        onBack={() => setPhase('summary')}
+        onNext={(addr) => { setDeliveryInfo(addr); handleSubmit(addr); }}
+        isSubmitting={isSubmitting}
       />
     );
   }
@@ -138,8 +180,10 @@ export default function NewRequestClient({ productData, activeAds }: Props) {
       onEdit={handleEdit}
       onDelete={(id) => setItems((prev) => prev.filter((i) => i.id !== id))}
       onAddMore={() => { setSelectedIds([]); setPhase('select'); }}
-      onSubmit={handleSubmit}
-      isSubmitting={isSubmitting}
+      onSubmit={() => setPhase('delivery')}
+      isSubmitting={false}
+      commonOptions={commonOptions}
+      onCommonOptionsChange={setCommonOptions}
     />
   );
 }
