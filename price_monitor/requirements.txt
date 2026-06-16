@@ -1,0 +1,5 @@
+playwright>=1.40.0
+schedule>=1.2.1
+requests>=2.31.0
+flask>=2.3.0
+flask-cors>=4.0.0

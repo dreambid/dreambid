@@ -1,0 +1,44 @@
+{
+  "products": [
+    {
+      "id": "447c68d0",
+      "name": "삼성 비스포크 냉장고 637L",
+      "url": "https://www.11st.co.kr/products/9013511694",
+      "last_price": 2191200,
+      "status": "in_stock",
+      "added_at": "2026-06-16 08:25:24",
+      "last_checked": "2026-06-16 10:48:10",
+      "prev_price": 2191200
+    },
+    {
+      "id": "9483b2c0",
+      "name": "[11번가] LG 디오스 AI 오브제컬렉션 냉장고(양문형) + LG 트롬 워시타워(S836MQQ012 + W2421WAMR)",
+      "url": "https://www.11st.co.kr/products/9261589133?&lCtgrNo=1001431&mCtgrNo=1002766",
+      "last_price": 3939000,
+      "status": "in_stock",
+      "added_at": "2026-06-16 10:21:58",
+      "last_checked": "2026-06-16 10:48:14",
+      "prev_price": 3939000
+    },
+    {
+      "id": "263cd8a7",
+      "name": "[11번가] 삼성 비스포크 키친핏 4도어 냉장고 RM70F64R1ZG",
+      "url": "https://www.11st.co.kr/products/9416161307?&trTypeCd=PW24&trCtgrNo=585021&priceCompare=false",
+      "last_price": 2358600,
+      "status": "in_stock",
+      "added_at": "2026-06-16 10:24:06",
+      "last_checked": "2026-06-16 10:48:17",
+      "prev_price": 2358600
+    },
+    {
+      "id": "04a72075",
+      "name": "www.coupang.com",
+      "url": "https://www.coupang.com/vp/products/7487768410?itemId=19573765260&vendorItemId=86681495122&sourceType=CATEGORY&categoryId=486634&traceId=mqfy2u4a",
+      "last_price": null,
+      "status": "manual_check",
+      "added_at": "2026-06-16 10:25:28",
+      "last_checked": "2026-06-16 10:48:18",
+      "prev_price": null
+    }
+  ]
+}
