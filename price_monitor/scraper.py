@@ -82,9 +82,11 @@ async def scrape_product(url: str) -> dict:
         # 일반: 새 브라우저 인스턴스
         if _is_gmarket(url):
             browser = None
+            # headless=False: Cloudflare가 headless 전용 browser property를 감지하므로
+            # 창이 잠깐 열렸다 닫히지만 Mac Mini 로컬 환경에서는 실용적
             context = await p.chromium.launch_persistent_context(
                 str(GMARKET_PROFILE_DIR),
-                headless=True,
+                headless=False,
                 args=["--no-sandbox", "--disable-blink-features=AutomationControlled"],
                 user_agent=USER_AGENT,
             )
