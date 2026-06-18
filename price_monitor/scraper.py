@@ -1,6 +1,7 @@
 """Playwright 기반 가격 스크래퍼 (11번가/G마켓 지원, 쿠팡/옥션 수동확인)"""
 import os
 import re
+from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
 from playwright.async_api import async_playwright
@@ -22,15 +23,16 @@ PRICE_MAX = 100_000_000
 # Cloudflare/Akamai WAF로 헤드리스 접근이 완전 차단된 도메인 (수동확인 처리)
 # - coupang.com: Akamai WAF (www/m 서브도메인, UA 변경 모두 차단 확인)
 # - auction.co.kr / auction.kr: Cloudflare 봇 차단 ("봇 확인 절차" 확인)
-# G마켓은 별도 처리: 쿠키 파일이 있으면 쿠키 로드 시도, 없거나 만료되면 수동확인
+# G마켓은 별도 처리: save_cookies_gmarket.py로 초기화한 프로필로 스크래핑
 MANUAL_CHECK_DOMAINS = frozenset([
     "coupang.com",
     "auction.co.kr",
     "auction.kr",
 ])
 
-# save_cookies_gmarket.py로 저장한 G마켓 인증 쿠키 (storage_state 형식)
-COOKIES_GMARKET_PATH = os.path.join(os.path.dirname(__file__), "cookies_gmarket.json")
+# save_cookies_gmarket.py가 생성하는 Chromium 브라우저 프로필 디렉토리
+# 쿠키 이식 대신 동일 프로필 재사용 → TLS 핑거프린트 일치로 Cloudflare 우회
+GMARKET_PROFILE_DIR = Path(os.path.dirname(__file__)) / "browser_profile_gmarket"
 
 
 def _extract_price(text: str) -> Optional[int]:
@@ -70,21 +72,21 @@ async def scrape_product(url: str) -> dict:
     if _is_manual_check(url):
         return _manual_check_result()
 
-    # G마켓: 쿠키 파일 없으면 수동확인 (save_cookies_gmarket.py 먼저 실행 필요)
-    if _is_gmarket(url) and not os.path.exists(COOKIES_GMARKET_PATH):
-        print("    [G마켓] cookies_gmarket.json 없음 → 수동확인 처리")
+    # G마켓: 브라우저 프로필 없으면 수동확인 (save_cookies_gmarket.py 먼저 실행 필요)
+    if _is_gmarket(url) and not GMARKET_PROFILE_DIR.exists():
+        print("    [G마켓] 브라우저 프로필 없음 → venv/bin/python save_cookies_gmarket.py 먼저 실행")
         return _manual_check_result()
 
     async with async_playwright() as p:
-        # G마켓은 자동화 감지 우회 플래그 + 쿠키 로드 필요
+        # G마켓: 동일 Chromium 프로필 재사용 (TLS 핑거프린트 유지)
+        # 일반: 새 브라우저 인스턴스
         if _is_gmarket(url):
-            browser = await p.chromium.launch(
+            browser = None
+            context = await p.chromium.launch_persistent_context(
+                str(GMARKET_PROFILE_DIR),
                 headless=True,
                 args=["--no-sandbox", "--disable-blink-features=AutomationControlled"],
-            )
-            context = await browser.new_context(
                 user_agent=USER_AGENT,
-                storage_state=COOKIES_GMARKET_PATH,
             )
         else:
             browser = await p.chromium.launch(headless=True)
@@ -101,11 +103,11 @@ async def scrape_product(url: str) -> dict:
             final_url = page.url
             is_gmarket = _is_gmarket(url) or _is_gmarket(final_url)
 
-            # G마켓 쿠키 만료 감지: Cloudflare 챌린지 페이지 → 수동확인 폴백
+            # G마켓 프로필 만료 감지: Cloudflare 챌린지 페이지 → 수동확인 폴백
             if is_gmarket:
                 title = await page.title()
                 if "Just a moment" in title:
-                    print("    [G마켓] 쿠키 만료 — Cloudflare 재차단됨. save_cookies_gmarket.py 재실행 필요")
+                    print("    [G마켓] 프로필 만료 — Cloudflare 재차단. save_cookies_gmarket.py 재실행 필요")
                     return _manual_check_result()
 
             # ── 상품명 추출 ──────────────────────────────────────────────
@@ -235,4 +237,9 @@ async def scrape_product(url: str) -> dict:
             return {"success": False, "error": str(e)}
 
         finally:
-            await browser.close()
+            # 일반 브라우저: browser.close()가 context도 함께 닫음
+            # persistent context: context.close()가 브라우저 프로세스도 종료
+            if browser is not None:
+                await browser.close()
+            else:
+                await context.close()

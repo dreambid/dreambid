@@ -3,3 +3,4 @@ __pycache__/
 *.pyc
 config.json
 cookies_gmarket.json
+browser_profile_gmarket/
