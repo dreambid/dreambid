@@ -1,10 +1,10 @@
-"""Playwright 기반 가격 스크래퍼 (11번가/G마켓 지원, 쿠팡/옥션 수동확인)"""
+"""Playwright 기반 가격 스크래퍼 (11번가/G마켓/옥션 지원, 쿠팡 수동확인)"""
 import os
 import re
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
-from playwright.async_api import async_playwright
+from playwright.async_api import async_playwright, BrowserContext
 
 # Mac Chrome 최신 버전 User-Agent
 USER_AGENT = (
@@ -13,24 +13,18 @@ USER_AGENT = (
     "Chrome/124.0.0.0 Safari/537.36"
 )
 
-# 페이지 로딩 타임아웃 (30초)
 TIMEOUT_MS = 30_000
-
-# 유효 가격 범위 (100원 ~ 1억원)
 PRICE_MIN = 100
 PRICE_MAX = 100_000_000
 
-# Cloudflare/Akamai WAF로 헤드리스 접근이 완전 차단된 도메인
-MANUAL_CHECK_DOMAINS = frozenset([
-    "coupang.com",
-    "auction.co.kr",
-    "auction.kr",
-])
+# Akamai WAF로 완전 차단 — persistent context로도 우회 불가 확인
+MANUAL_CHECK_DOMAINS = frozenset(["coupang.com"])
 
-# save_cookies_gmarket.py가 생성하는 Chromium 브라우저 프로필 디렉토리
-GMARKET_PROFILE_DIR = Path(os.path.dirname(__file__)) / "browser_profile_gmarket"
+# save_cookies_*.py 가 생성하는 Chromium 프로필 디렉토리
+GMARKET_PROFILE_DIR  = Path(os.path.dirname(__file__)) / "browser_profile_gmarket"
+AUCTION_PROFILE_DIR  = Path(os.path.dirname(__file__)) / "browser_profile_auction"
 
-# 명시적 판매중단 문구 목록 (페이지 본문에서 탐색)
+# 명시적 판매중단 문구 (페이지 본문에서 탐색)
 DISCONTINUED_PHRASES = [
     "현재 판매중인 상품이 아닙니다",
     "판매가 중지된 상품",
@@ -40,7 +34,7 @@ DISCONTINUED_PHRASES = [
 
 
 def _extract_price(text: str) -> Optional[int]:
-    """텍스트에서 '원' 앞 숫자 패턴을 추출. 유효 범위 내 첫 번째 값 반환."""
+    """텍스트에서 '원' 앞 숫자 추출. 유효 범위 내 첫 번째 값 반환."""
     matches = re.findall(r"([\d,]+)\s*원", text)
     for m in matches:
         try:
@@ -53,14 +47,17 @@ def _extract_price(text: str) -> Optional[int]:
 
 
 def _is_manual_check(url: str) -> bool:
-    """Akamai/Cloudflare WAF로 완전 차단된 도메인인지 확인"""
     host = urlparse(url).netloc.lower()
     return any(d in host for d in MANUAL_CHECK_DOMAINS)
 
 
 def _is_gmarket(url: str) -> bool:
-    """G마켓 도메인 여부 확인 (단축 URL link.gmarket.co.kr 포함)"""
     return "gmarket.co.kr" in urlparse(url).netloc.lower()
+
+
+def _is_auction(url: str) -> bool:
+    host = urlparse(url).netloc.lower()
+    return "auction.co.kr" in host or "auction.kr" in host
 
 
 def _manual_check_result() -> dict:
@@ -68,35 +65,44 @@ def _manual_check_result() -> dict:
             "out_of_stock": False, "discontinued": False, "uncertain": False}
 
 
+async def _make_persistent_context(p, profile_dir: Path) -> BrowserContext:
+    """G마켓/옥션 공용: Cloudflare 우회를 위해 headless=False + 저장된 프로필 사용"""
+    return await p.chromium.launch_persistent_context(
+        str(profile_dir),
+        headless=False,
+        args=["--no-sandbox", "--disable-blink-features=AutomationControlled"],
+        user_agent=USER_AGENT,
+    )
+
+
 async def scrape_product(url: str) -> dict:
     """
     상품 URL에서 가격, 품절 여부, 상품명 추출.
 
     반환 필드:
-      success: bool
-      name, price: 상품명/가격
+      success, name, price
       out_of_stock: True → 품절
-      discontinued: True → 판매중단 ("현재 판매중인 상품이 아닙니다" 등)
-      uncertain: True → 구매/품절/판매중단 신호 모두 미감지 (직접 확인 권장)
+      discontinued: True → 판매중단
+      uncertain: True → 신호 미감지 (직접 확인 권장)
+      manual_check: True → WAF 차단 도메인 (쿠팡)
     """
     if _is_manual_check(url):
         return _manual_check_result()
 
     if _is_gmarket(url) and not GMARKET_PROFILE_DIR.exists():
-        print("    [G마켓] 브라우저 프로필 없음 → venv/bin/python save_cookies_gmarket.py 먼저 실행")
+        print("    [G마켓] 프로필 없음 → venv/bin/python save_cookies_gmarket.py 먼저 실행")
+        return _manual_check_result()
+
+    if _is_auction(url) and not AUCTION_PROFILE_DIR.exists():
+        print("    [옥션] 프로필 없음 → venv/bin/python save_cookies_auction.py 먼저 실행")
         return _manual_check_result()
 
     async with async_playwright() as p:
+        browser = None
         if _is_gmarket(url):
-            browser = None
-            # headless=False: Cloudflare가 headless 전용 property를 감지하므로
-            # 창이 잠깐 열렸다 닫히지만 Mac Mini 로컬 환경에서 실용적
-            context = await p.chromium.launch_persistent_context(
-                str(GMARKET_PROFILE_DIR),
-                headless=False,
-                args=["--no-sandbox", "--disable-blink-features=AutomationControlled"],
-                user_agent=USER_AGENT,
-            )
+            context = await _make_persistent_context(p, GMARKET_PROFILE_DIR)
+        elif _is_auction(url):
+            context = await _make_persistent_context(p, AUCTION_PROFILE_DIR)
         else:
             browser = await p.chromium.launch(headless=True)
             context = await browser.new_context(user_agent=USER_AGENT)
@@ -109,35 +115,39 @@ async def scrape_product(url: str) -> dict:
 
             final_url = page.url
             is_gmarket = _is_gmarket(url) or _is_gmarket(final_url)
+            is_auction = _is_auction(url) or _is_auction(final_url)
 
-            # G마켓 프로필 만료 감지
-            if is_gmarket:
+            # Cloudflare 재차단 감지 (프로필 만료 시 폴백)
+            if is_gmarket or is_auction:
                 title = await page.title()
-                if "Just a moment" in title:
-                    print("    [G마켓] 프로필 만료 — Cloudflare 재차단. save_cookies_gmarket.py 재실행 필요")
+                site = "G마켓" if is_gmarket else "옥션"
+                if "Just a moment" in title or "봇" in title:
+                    script = "save_cookies_gmarket.py" if is_gmarket else "save_cookies_auction.py"
+                    print(f"    [{site}] 프로필 만료 → {script} 재실행 필요")
                     return _manual_check_result()
 
-            # ── 상품명 추출 ──────────────────────────────────────────────
+            # ── 상품명 ──────────────────────────────────────────────────
             name: Optional[str] = None
             og_title_el = await page.query_selector('meta[property="og:title"]')
             if og_title_el:
                 og_title = await og_title_el.get_attribute("content")
                 if og_title:
                     name = og_title.strip()
+                    # G마켓 og:title은 "G마켓-상품명" 형식
                     if is_gmarket:
                         for prefix in ("G마켓-", "G마켓 -"):
                             if name.startswith(prefix):
                                 name = name[len(prefix):].strip()
                                 break
 
-            # ── 페이지 전체 텍스트 1회 수집 (가격 추출 + 판매중단 감지 공용) ──
+            # ── 페이지 전체 텍스트 1회 수집 (가격·판매중단 감지 공용) ────
             body_text: Optional[str] = None
             try:
                 body_text = await page.inner_text("body")
             except Exception:
                 pass
 
-            # ── 가격 추출 단계 1: og:description ──────────────────────────
+            # ── 가격 1: og:description ───────────────────────────────────
             price: Optional[int] = None
             og_desc_el = await page.query_selector('meta[property="og:description"]')
             if og_desc_el:
@@ -145,50 +155,49 @@ async def scrape_product(url: str) -> dict:
                 if og_desc:
                     price = _extract_price(og_desc)
 
-            # ── 가격 추출 단계 2: CSS 셀렉터 ─────────────────────────────
+            # ── 가격 2: CSS 셀렉터 ───────────────────────────────────────
             if price is None:
-                for selector in ["strong.price_real", ".price_area strong", ".price_value", ".sell_price"]:
+                for sel in ["strong.price_real", ".price_area strong",
+                            ".ItemPrice", ".price_value", ".sell_price"]:
                     try:
-                        element = await page.query_selector(selector)
-                        if element:
-                            price = _extract_price(await element.inner_text())
+                        el = await page.query_selector(sel)
+                        if el:
+                            price = _extract_price(await el.inner_text())
                             if price is not None:
                                 break
                     except Exception:
                         continue
 
-            # ── 가격 추출 단계 3: 페이지 전체 텍스트 ──────────────────────
+            # ── 가격 3: 본문 전체 ────────────────────────────────────────
             if price is None and body_text:
                 price = _extract_price(body_text)
 
-            # ── 재고 상태 판단 ─────────────────────────────────────────────
+            # ── 재고 상태 판단 ───────────────────────────────────────────
             # 우선순위:
-            #   1) "구매하기" 버튼 활성 → 판매중 (in_stock)
-            #   2) 판매중단 문구 존재 → 판매중단 (discontinued)
-            #   3) "품절" 버튼 존재 → 품절 (out_of_stock)
-            #   4) 셋 모두 미감지 → 확인필요 (uncertain) — 안전 우선, 판매중 가정하지 않음
+            #   1) 구매하기 버튼 활성 → in_stock
+            #   2) 판매중단 문구     → discontinued
+            #   3) 품절 버튼        → out_of_stock
+            #   4) 미감지           → uncertain (안전 우선)
 
-            # Step 1: 구매하기 버튼
             buy_button_found = False
             buy_button_signal = "없음"
-            for selector in [
-                'button:has-text("구매하기")',
-                'a:has-text("구매하기")',
-                'em:has-text("구매하기")',  # G마켓
+            for sel in [
+                'button:has-text("구매하기")', 'a:has-text("구매하기")',
+                'em:has-text("구매하기")',       # G마켓
+                "#buyNow", ".btnBuy",           # 옥션
                 ".btn_buy", "#buyBtn", "#btn_buy",
             ]:
                 try:
-                    el = await page.query_selector(selector)
+                    el = await page.query_selector(sel)
                     if el and await el.is_visible():
                         if (await el.get_attribute("disabled")) is None and \
                            (await el.get_attribute("aria-disabled")) != "true":
                             buy_button_found = True
-                            buy_button_signal = selector
+                            buy_button_signal = sel
                             break
                 except Exception:
                     continue
 
-            # Step 2: 판매중단 문구 (본문 텍스트)
             discontinued_found = False
             discontinued_signal = "없음"
             if body_text:
@@ -198,44 +207,32 @@ async def scrape_product(url: str) -> dict:
                         discontinued_signal = phrase
                         break
 
-            # Step 3: 품절 버튼
             sold_out_found = False
             sold_out_signal = "없음"
-            for selector in [
-                'button:has-text("품절")',
-                'em:has-text("품절")',  # G마켓
-                ".btn_soldout",
-                "[class*='soldOut']",
+            for sel in [
+                'button:has-text("품절")', 'em:has-text("품절")',
+                ".btn_soldout", "[class*='soldOut']",
             ]:
                 try:
-                    el = await page.query_selector(selector)
+                    el = await page.query_selector(sel)
                     if el and await el.is_visible():
                         sold_out_found = True
-                        sold_out_signal = selector
+                        sold_out_signal = sel
                         break
                 except Exception:
                     continue
 
-            # Step 4: 최종 판단 (구매하기 우선, 판매중단·품절은 상호 배타)
             if buy_button_found:
-                out_of_stock = False
-                discontinued = False
-                uncertain = False
+                out_of_stock, discontinued, uncertain = False, False, False
                 status_label = "판매중"
             elif discontinued_found:
-                out_of_stock = False
-                discontinued = True
-                uncertain = False
+                out_of_stock, discontinued, uncertain = False, True, False
                 status_label = f"판매중단({discontinued_signal})"
             elif sold_out_found:
-                out_of_stock = True
-                discontinued = False
-                uncertain = False
+                out_of_stock, discontinued, uncertain = True, False, False
                 status_label = "품절"
             else:
-                out_of_stock = False
-                discontinued = False
-                uncertain = True
+                out_of_stock, discontinued, uncertain = False, False, True
                 status_label = "확인필요(신호없음)"
 
             print(
