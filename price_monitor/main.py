@@ -56,10 +56,10 @@ def check_products():
             time.sleep(2)
             continue
 
-        # 쿠팡: Akamai WAF 차단으로 자동 스크래핑 불가 - 수동확인으로 저장하고 다음 상품으로
+        # WAF 차단 도메인(쿠팡/G마켓/옥션): 수동확인으로 저장하고 다음 상품으로
         if result.get("manual_check"):
             update_product_state(product_id, None, "manual_check")
-            print(f"    [수동확인] {name}: 쿠팡은 자동 스크래핑이 차단되어 수동 확인이 필요합니다.")
+            print(f"    [수동확인] {name}: 봇 차단으로 자동 스크래핑 불가 - 직접 확인 필요")
             time.sleep(2)
             continue
 

@@ -25,9 +25,17 @@ def _format_status(product: dict) -> str:
     last_price = product.get("last_price")
     prev_price = product.get("prev_price")
 
-    # 쿠팡: Akamai WAF 차단으로 자동 스크래핑 불가 - 수동확인 대상
+    # WAF 차단 도메인: 사이트명 표시 (쿠팡/G마켓/옥션 모두 수동확인)
     if status == "manual_check":
-        return "쿠팡 (수동확인)"
+        url = product.get("url", "")
+        host = urlparse(url).netloc.lower()
+        if "coupang.com" in host:
+            return "쿠팡 (수동확인)"
+        elif "gmarket.co.kr" in host:
+            return "G마켓 (수동확인)"
+        elif "auction" in host:
+            return "옥션 (수동확인)"
+        return "수동확인 필요"
 
     # 아직 수집 전
     if status == "unknown" or last_price is None:

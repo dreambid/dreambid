@@ -1,4 +1,4 @@
-"""Playwright 기반 11번가 상품 정보 스크래퍼 (비동기)"""
+"""Playwright 기반 가격 스크래퍼 (11번가 지원, 쿠팡/G마켓/옥션 수동확인)"""
 import re
 from typing import Optional
 from urllib.parse import urlparse
@@ -18,6 +18,17 @@ TIMEOUT_MS = 30_000
 PRICE_MIN = 100
 PRICE_MAX = 100_000_000
 
+# Cloudflare/Akamai WAF로 헤드리스 접근이 완전 차단된 도메인 (수동확인 처리)
+# - coupang.com: Akamai WAF (www/m 서브도메인, UA 변경 모두 차단 확인)
+# - gmarket.co.kr: Cloudflare JS Challenge (HTTP 403, "Just a moment..." 확인)
+# - auction.co.kr / auction.kr: Cloudflare 봇 차단 ("봇 확인 절차" 확인)
+MANUAL_CHECK_DOMAINS = frozenset([
+    "coupang.com",
+    "gmarket.co.kr",
+    "auction.co.kr",
+    "auction.kr",
+])
+
 
 def _extract_price(text: str) -> Optional[int]:
     """텍스트에서 '원' 앞 숫자 패턴을 추출. 유효 범위 내 첫 번째 값 반환."""
@@ -32,15 +43,19 @@ def _extract_price(text: str) -> Optional[int]:
     return None
 
 
+def _is_manual_check(url: str) -> bool:
+    """WAF로 차단된 도메인인지 확인"""
+    host = urlparse(url).netloc.lower()
+    return any(d in host for d in MANUAL_CHECK_DOMAINS)
+
+
 async def scrape_product(url: str) -> dict:
     """
     상품 URL에서 가격, 품절 여부, 상품명 추출.
     실패 시 {"success": False, "error": 에러내용} 반환.
     """
-    # 쿠팡은 Akamai WAF가 헤드리스 브라우저 접근을 403으로 완전 차단한다
-    # (www/m 서브도메인, UA 변경, webdriver 플래그 은닉으로도 우회 불가 확인됨)
-    # → 스크래핑을 시도하지 않고 수동확인 대상으로 즉시 반환
-    if "coupang.com" in urlparse(url).netloc:
+    # 차단된 도메인은 스크래핑 시도 없이 수동확인 처리
+    if _is_manual_check(url):
         return {
             "success": True,
             "manual_check": True,
@@ -60,17 +75,21 @@ async def scrape_product(url: str) -> dict:
             await page.wait_for_timeout(2000)
 
             # ── 상품명 추출 ──────────────────────────────────────────────
-            # og:title 메타태그가 가장 안정적
+            # query_selector 사용: 요소 없을 때 즉시 None 반환 (get_attribute는 30초 대기)
             name: Optional[str] = None
-            og_title = await page.get_attribute('meta[property="og:title"]', "content")
-            if og_title:
-                name = og_title.strip()
+            og_title_el = await page.query_selector('meta[property="og:title"]')
+            if og_title_el:
+                og_title = await og_title_el.get_attribute("content")
+                if og_title:
+                    name = og_title.strip()
 
             # ── 가격 추출 단계 1: og:description content에서 숫자 추출 ──
             price: Optional[int] = None
-            og_desc = await page.get_attribute('meta[property="og:description"]', "content")
-            if og_desc:
-                price = _extract_price(og_desc)
+            og_desc_el = await page.query_selector('meta[property="og:description"]')
+            if og_desc_el:
+                og_desc = await og_desc_el.get_attribute("content")
+                if og_desc:
+                    price = _extract_price(og_desc)
 
             # ── 가격 추출 단계 2: CSS 셀렉터 순서대로 시도 ───────────────
             if price is None:

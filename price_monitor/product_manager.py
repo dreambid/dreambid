@@ -82,7 +82,7 @@ def list_products():
             "in_stock": "판매중",
             "out_of_stock": "품절",
             "unknown": "미확인",
-            "manual_check": "쿠팡(수동확인)",
+            "manual_check": "수동확인",
         }
         status_str = status_map.get(p.get("status", "unknown"), "미확인")
 
