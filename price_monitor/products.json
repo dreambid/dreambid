@@ -1,23 +1,13 @@
 {
   "products": [
     {
-      "id": "447c68d0",
-      "name": "삼성 비스포크 냉장고 637L",
-      "url": "https://www.11st.co.kr/products/9013511694",
-      "last_price": 2191200,
-      "status": "in_stock",
-      "added_at": "2026-06-16 08:25:24",
-      "last_checked": "2026-06-16 10:48:10",
-      "prev_price": 2191200
-    },
-    {
       "id": "9483b2c0",
       "name": "[11번가] LG 디오스 AI 오브제컬렉션 냉장고(양문형) + LG 트롬 워시타워(S836MQQ012 + W2421WAMR)",
       "url": "https://www.11st.co.kr/products/9261589133?&lCtgrNo=1001431&mCtgrNo=1002766",
       "last_price": 3939000,
       "status": "in_stock",
       "added_at": "2026-06-16 10:21:58",
-      "last_checked": "2026-06-16 10:48:14",
+      "last_checked": "2026-06-19 08:49:26",
       "prev_price": 3939000
     },
     {
@@ -27,17 +17,37 @@
       "last_price": 2358600,
       "status": "in_stock",
       "added_at": "2026-06-16 10:24:06",
-      "last_checked": "2026-06-16 10:48:17",
+      "last_checked": "2026-06-19 08:49:29",
       "prev_price": 2358600
     },
     {
-      "id": "04a72075",
-      "name": "www.coupang.com",
-      "url": "https://www.coupang.com/vp/products/7487768410?itemId=19573765260&vendorItemId=86681495122&sourceType=CATEGORY&categoryId=486634&traceId=mqfy2u4a",
+      "id": "a0f0c1a7",
+      "name": "[11번가] [삼성 감사 페스티벌] 삼성 비스포크 AI 냉장고 키친핏 Max 637L RM70F64R1ZG",
+      "url": "https://www.11st.co.kr/products/9013511694",
+      "last_price": null,
+      "status": "discontinued",
+      "added_at": "2026-06-16 16:03:06",
+      "last_checked": "2026-06-19 08:49:32",
+      "prev_price": 2191200
+    },
+    {
+      "id": "89d2a8fc",
+      "name": "[11번가] [혜택가 48만] LG 통돌이 인공지능 세탁기 T17MX3 17kg DD모터",
+      "url": "https://www.11st.co.kr/products/5287246195?trTypeCd=47&trCtgrNo=129400",
+      "last_price": 515000,
+      "status": "in_stock",
+      "added_at": "2026-06-19 07:14:26",
+      "last_checked": "2026-06-19 08:49:35",
+      "prev_price": 515000
+    },
+    {
+      "id": "c00ec03e",
+      "name": "itempage3.auction.co.kr",
+      "url": "https://itempage3.auction.co.kr/DetailView.aspx?itemno=E901635070",
       "last_price": null,
       "status": "manual_check",
-      "added_at": "2026-06-16 10:25:28",
-      "last_checked": "2026-06-16 10:48:18",
+      "added_at": "2026-06-19 08:07:22",
+      "last_checked": "2026-06-19 08:07:22",
       "prev_price": null
     }
   ]

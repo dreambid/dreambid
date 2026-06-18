@@ -56,10 +56,28 @@ def check_products():
             time.sleep(2)
             continue
 
-        # WAF 차단 도메인(쿠팡/G마켓/옥션): 수동확인으로 저장하고 다음 상품으로
+        # WAF 차단 도메인(쿠팡/옥션): 수동확인으로 저장하고 다음 상품으로
         if result.get("manual_check"):
             update_product_state(product_id, None, "manual_check")
             print(f"    [수동확인] {name}: 봇 차단으로 자동 스크래핑 불가 - 직접 확인 필요")
+            time.sleep(2)
+            continue
+
+        # 판매중단 감지: 저장 후 상태 변화 시 알림
+        if result.get("discontinued"):
+            update_product_state(product_id, None, "discontinued")
+            if last_status != "discontinued":
+                print(f"    [판매중단] {name}: '현재 판매중인 상품이 아닙니다' 감지")
+                notify_out_of_stock(f"[판매중단] {name}")
+            else:
+                print(f"    [판매중단유지] {name}")
+            time.sleep(2)
+            continue
+
+        # 신호 미감지: 확인필요로 저장 (판매중 가정하지 않음)
+        if result.get("uncertain"):
+            update_product_state(product_id, result.get("price"), "unknown")
+            print(f"    [확인필요] {name}: 구매/품절/판매중단 버튼 모두 미감지 — 직접 확인 권장")
             time.sleep(2)
             continue
 

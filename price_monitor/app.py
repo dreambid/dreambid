@@ -37,7 +37,11 @@ def _format_status(product: dict) -> str:
             return "옥션 (수동확인)"
         return "수동확인 필요"
 
-    # 아직 수집 전
+    # 판매중단
+    if status == "discontinued":
+        return "판매중단"
+
+    # 아직 수집 전 또는 확인필요
     if status == "unknown" or last_price is None:
         return "확인중"
 
@@ -111,6 +115,10 @@ def post_product():
     if scrape_result.get("success"):
         if scrape_result.get("manual_check"):
             update_product_state(product["id"], None, "manual_check")
+        elif scrape_result.get("discontinued"):
+            update_product_state(product["id"], None, "discontinued")
+        elif scrape_result.get("uncertain"):
+            update_product_state(product["id"], scrape_result.get("price"), "unknown")
         else:
             price = scrape_result.get("price")
             status = "out_of_stock" if scrape_result.get("out_of_stock") else "in_stock"
