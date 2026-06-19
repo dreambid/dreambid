@@ -139,5 +139,6 @@ def remove_product(product_id):
 
 
 if __name__ == "__main__":
-    # 0.0.0.0으로 바인딩해 로컬 네트워크에서도 접근 가능
-    app.run(host="0.0.0.0", port=5001, debug=False)
+    # use_reloader=True: scraper.py 등 .py 파일 수정 시 Flask 자동 재시작
+    # debug=False 유지: Werkzeug 디버거 노출 방지 (로컬 전용이지만 보수적 설정)
+    app.run(host="0.0.0.0", port=5001, debug=False, use_reloader=True)

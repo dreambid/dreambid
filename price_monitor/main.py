@@ -1,9 +1,14 @@
 """쇼핑몰 가격 모니터링 CLI 메인 진입점"""
 import asyncio
+import os
+import sys
 import time
+from pathlib import Path
 from typing import Optional
 
 import schedule
+from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 
 from product_manager import (
     add_product,
@@ -19,6 +24,29 @@ from telegram_bot import (
     notify_price_change,
     notify_restock,
 )
+
+
+_WATCH_DIR = Path(__file__).parent
+
+
+class _CodeChangeHandler(FileSystemEventHandler):
+    """소스 .py 파일 수정 감지 → 현재 프로세스 교체 재시작 (os.execv)"""
+
+    def on_modified(self, event):
+        if event.is_directory or Path(event.src_path).suffix != ".py":
+            return
+        fname = Path(event.src_path).name
+        print(f"\n[자동재시작] 코드 변경 감지: {fname}")
+        print("[자동재시작] 재시작합니다...\n")
+        os.execv(sys.executable, [sys.executable] + sys.argv)
+
+
+def _start_code_watcher() -> None:
+    """백그라운드 스레드에서 .py 파일 변경을 감시하기 시작"""
+    observer = Observer()
+    observer.schedule(_CodeChangeHandler(), str(_WATCH_DIR), recursive=False)
+    observer.daemon = True
+    observer.start()
 
 
 def check_products():
@@ -166,6 +194,7 @@ def menu_delete_product():
 
 
 def main():
+    _start_code_watcher()
     print("=" * 45)
     print("    쇼핑몰 가격 모니터링 프로그램 v1.0")
     print("=" * 45)
