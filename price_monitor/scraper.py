@@ -1,4 +1,4 @@
-"""Playwright 기반 가격 스크래퍼 (11번가/G마켓/옥션/쿠팡 지원)"""
+"""Playwright 기반 가격 스크래퍼 (11번가/G마켓/옥션 지원, 쿠팡 수동확인)"""
 import os
 import re
 from pathlib import Path
@@ -17,10 +17,13 @@ TIMEOUT_MS = 30_000
 PRICE_MIN = 100
 PRICE_MAX = 100_000_000
 
+# Akamai WAF 완전 차단 확인 — headless=False + persistent context로도 불가
+# (edgesuite 403, Access Denied 반환. 수동확인 유지.)
+MANUAL_CHECK_DOMAINS = frozenset(["coupang.com"])
+
 # save_cookies_*.py 가 생성하는 Chromium 프로필 디렉토리
-GMARKET_PROFILE_DIR  = Path(os.path.dirname(__file__)) / "browser_profile_gmarket"
-AUCTION_PROFILE_DIR  = Path(os.path.dirname(__file__)) / "browser_profile_auction"
-COUPANG_PROFILE_DIR  = Path(os.path.dirname(__file__)) / "browser_profile_coupang"
+GMARKET_PROFILE_DIR = Path(os.path.dirname(__file__)) / "browser_profile_gmarket"
+AUCTION_PROFILE_DIR = Path(os.path.dirname(__file__)) / "browser_profile_auction"
 
 # 명시적 판매중단 문구 (페이지 본문에서 탐색)
 DISCONTINUED_PHRASES = [
@@ -44,8 +47,9 @@ def _extract_price(text: str) -> Optional[int]:
     return None
 
 
-def _is_coupang(url: str) -> bool:
-    return "coupang.com" in urlparse(url).netloc.lower()
+def _is_manual_check(url: str) -> bool:
+    """Akamai WAF 완전 차단 도메인 확인"""
+    return any(d in urlparse(url).netloc.lower() for d in MANUAL_CHECK_DOMAINS)
 
 
 def _is_gmarket(url: str) -> bool:
@@ -81,17 +85,18 @@ async def scrape_product(url: str) -> dict:
       out_of_stock: True → 품절
       discontinued: True → 판매중단
       uncertain: True → 신호 미감지 (직접 확인 권장)
-      manual_check: True → WAF 차단 도메인 (쿠팡)
+      manual_check: True → WAF 차단 (쿠팡 Akamai — 수동확인)
     """
+    # 쿠팡: Akamai WAF 차단 확인됨 → 즉시 수동확인 반환
+    if _is_manual_check(url):
+        return _manual_check_result()
+
     # 프로필 없는 사이트: 수동확인 폴백
     if _is_gmarket(url) and not GMARKET_PROFILE_DIR.exists():
         print("    [G마켓] 프로필 없음 → venv/bin/python save_cookies_gmarket.py 먼저 실행")
         return _manual_check_result()
     if _is_auction(url) and not AUCTION_PROFILE_DIR.exists():
         print("    [옥션] 프로필 없음 → venv/bin/python save_cookies_auction.py 먼저 실행")
-        return _manual_check_result()
-    if _is_coupang(url) and not COUPANG_PROFILE_DIR.exists():
-        print("    [쿠팡] 프로필 없음 → venv/bin/python save_cookies_coupang.py 먼저 실행")
         return _manual_check_result()
 
     async with async_playwright() as p:
@@ -100,8 +105,6 @@ async def scrape_product(url: str) -> dict:
             context = await _make_persistent_context(p, GMARKET_PROFILE_DIR)
         elif _is_auction(url):
             context = await _make_persistent_context(p, AUCTION_PROFILE_DIR)
-        elif _is_coupang(url):
-            context = await _make_persistent_context(p, COUPANG_PROFILE_DIR)
         else:
             browser = await p.chromium.launch(headless=True)
             context = await browser.new_context(user_agent=USER_AGENT)
@@ -115,24 +118,14 @@ async def scrape_product(url: str) -> dict:
             final_url = page.url
             is_gmarket = _is_gmarket(url) or _is_gmarket(final_url)
             is_auction = _is_auction(url) or _is_auction(final_url)
-            is_coupang = _is_coupang(url) or _is_coupang(final_url)
 
-            # WAF/Cloudflare 재차단 감지 (프로필 만료 시 폴백)
-            if is_gmarket or is_auction or is_coupang:
+            # Cloudflare 재차단 감지 (프로필 만료 시 폴백)
+            if is_gmarket or is_auction:
                 title = await page.title()
-                blocked = (
-                    "Just a moment" in title or "봇" in title       # Cloudflare
-                    or "Robot Check" in title or "Access Denied" in title  # Akamai
-                    or "403" in title
-                )
-                if blocked:
-                    if is_gmarket:
-                        site, script = "G마켓", "save_cookies_gmarket.py"
-                    elif is_auction:
-                        site, script = "옥션", "save_cookies_auction.py"
-                    else:
-                        site, script = "쿠팡", "save_cookies_coupang.py"
-                    print(f"    [{site}] WAF 차단 감지 → {script} 재실행 필요")
+                if "Just a moment" in title or "봇" in title:
+                    site = "G마켓" if is_gmarket else "옥션"
+                    script = "save_cookies_gmarket.py" if is_gmarket else "save_cookies_auction.py"
+                    print(f"    [{site}] 프로필 만료 → {script} 재실행 필요")
                     return _manual_check_result()
 
             # ── 상품명 ──────────────────────────────────────────────────
