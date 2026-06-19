@@ -61,6 +61,10 @@ def _is_auction(url: str) -> bool:
     return "auction.co.kr" in host or "auction.kr" in host
 
 
+def _is_lotteon(url: str) -> bool:
+    return "lotteon.com" in urlparse(url).netloc.lower()
+
+
 def _manual_check_result() -> dict:
     return {"success": True, "manual_check": True, "name": None, "price": None,
             "out_of_stock": False, "discontinued": False, "uncertain": False}
@@ -118,6 +122,7 @@ async def scrape_product(url: str) -> dict:
             final_url = page.url
             is_gmarket = _is_gmarket(url) or _is_gmarket(final_url)
             is_auction = _is_auction(url) or _is_auction(final_url)
+            is_lotteon = _is_lotteon(url) or _is_lotteon(final_url)
 
             # Cloudflare 재차단 감지 (프로필 만료 시 폴백)
             if is_gmarket or is_auction:
@@ -141,6 +146,11 @@ async def scrape_product(url: str) -> dict:
                             if name.startswith(prefix):
                                 name = name[len(prefix):].strip()
                                 break
+                    # 롯데온 og:title은 "[브랜드]상품명 : 롯데ON" 형식
+                    if is_lotteon:
+                        name = re.sub(r'^\[[^\]]+\]\s*', '', name)
+                        if ' : 롯데ON' in name:
+                            name = name[:name.index(' : 롯데ON')].strip()
 
             # ── 페이지 전체 텍스트 1회 수집 (가격·판매중단 감지 공용) ────
             body_text: Optional[str] = None
@@ -149,15 +159,30 @@ async def scrape_product(url: str) -> dict:
             except Exception:
                 pass
 
-            # ── 가격 1: og:description ───────────────────────────────────
+            # ── 가격 1: 롯데온 혜택가 우선 ───────────────────────────────
+            # .advantageBox__top--price = "혜택가\n113,600원" (쿠폰/멤버십 적용가)
+            # 혜택가 없으면 .pd-price__info--number = "판매가\n149,000원" 사용
             price: Optional[int] = None
-            og_desc_el = await page.query_selector('meta[property="og:description"]')
-            if og_desc_el:
-                og_desc = await og_desc_el.get_attribute("content")
-                if og_desc:
-                    price = _extract_price(og_desc)
+            if is_lotteon:
+                for sel in [".advantageBox__top--price", ".pd-price__info--number"]:
+                    try:
+                        el = await page.query_selector(sel)
+                        if el:
+                            price = _extract_price(await el.inner_text())
+                            if price is not None:
+                                break
+                    except Exception:
+                        continue
 
-            # ── 가격 2: CSS 셀렉터 ───────────────────────────────────────
+            # ── 가격 2: og:description (일반 사이트) ────────────────────
+            if price is None:
+                og_desc_el = await page.query_selector('meta[property="og:description"]')
+                if og_desc_el:
+                    og_desc = await og_desc_el.get_attribute("content")
+                    if og_desc:
+                        price = _extract_price(og_desc)
+
+            # ── 가격 3: CSS 셀렉터 ───────────────────────────────────────
             if price is None:
                 for sel in ["strong.price_real", ".price_area strong",
                             ".ItemPrice", ".price_value", ".sell_price"]:
@@ -170,7 +195,7 @@ async def scrape_product(url: str) -> dict:
                     except Exception:
                         continue
 
-            # ── 가격 3: 본문 전체 ────────────────────────────────────────
+            # ── 가격 4: 본문 전체 ────────────────────────────────────────
             if price is None and body_text:
                 price = _extract_price(body_text)
 
