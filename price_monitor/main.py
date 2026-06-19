@@ -36,8 +36,9 @@ class _CodeChangeHandler(FileSystemEventHandler):
         if event.is_directory or Path(event.src_path).suffix != ".py":
             return
         fname = Path(event.src_path).name
-        print(f"\n[자동재시작] 코드 변경 감지: {fname}")
-        print("[자동재시작] 재시작합니다...\n")
+        print(f"\n[자동재시작] 코드 변경 감지: {fname}", flush=True)
+        print("[자동재시작] 재시작합니다...\n", flush=True)
+        sys.stdout.flush()
         os.execv(sys.executable, [sys.executable] + sys.argv)
 
 
