@@ -20,6 +20,7 @@ from product_manager import (
 from scraper import scrape_product
 from telegram_bot import (
     notify_error,
+    notify_no_change,
     notify_out_of_stock,
     notify_price_change,
     notify_restock,
@@ -58,6 +59,7 @@ def check_products():
         return
 
     print(f"\n[모니터링] {len(products)}개 상품 확인 시작...")
+    changed = False  # 이번 사이클에 알림을 보낸 변동이 있었는지 추적
 
     for product in products:
         product_id = product["id"]
@@ -130,17 +132,20 @@ def check_products():
             price_disp = f"{current_price:,}원" if current_price else "미확인"
             print(f"    [재입고] {name}: {price_disp}")
             notify_restock(name, current_price)
+            changed = True
 
         elif last_status != "out_of_stock" and current_status == "out_of_stock":
             # 판매중 → 품절
             print(f"    [품절] {name}")
             notify_out_of_stock(name)
+            changed = True
 
         elif current_status == "in_stock" and current_price is not None and last_price is not None:
             # 가격 변동 감지 (재고 있는 경우에만)
             if current_price != last_price:
                 print(f"    [가격변동] {name}: {last_price:,}원 → {current_price:,}원")
                 notify_price_change(name, last_price, current_price)
+                changed = True
             else:
                 print(f"    [변동없음] {name}: {current_price:,}원")
         else:
@@ -150,6 +155,8 @@ def check_products():
         # 상품 간 2초 딜레이 (서버 부하 방지)
         time.sleep(2)
 
+    if not changed:
+        notify_no_change(len(products))
     print("[모니터링] 이번 회차 확인 완료\n")
 
 

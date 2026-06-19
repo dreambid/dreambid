@@ -89,6 +89,12 @@ def notify_restock(name: str, current_price: int):
     send_message(message)
 
 
+def notify_no_change(count: int):
+    """변동없음 요약 알림 전송"""
+    message = f"✅ 관리상품 {count}개 상태 변동사항 없습니다"
+    send_message(message)
+
+
 def notify_error(name: str, error_msg: str):
     """오류 알림 전송"""
     message = (
