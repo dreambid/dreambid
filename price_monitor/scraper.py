@@ -1,4 +1,4 @@
-"""Playwright 기반 가격 스크래퍼 (11번가/G마켓/옥션/롯데온/LG닷컴 지원, 쿠팡 수동확인)"""
+"""Playwright 기반 가격 스크래퍼 (11번가/G마켓/옥션/롯데온/LG닷컴/오늘의집 지원, 쿠팡 수동확인)"""
 import os
 import re
 from pathlib import Path
@@ -57,14 +57,13 @@ def _is_auction(url: str) -> bool: n = urlparse(url).netloc.lower(); return "auc
 def _is_lotteon(url: str) -> bool: return "lotteon.com" in urlparse(url).netloc.lower()
 def _is_lgcom(url: str) -> bool: return "lge.co.kr" in urlparse(url).netloc.lower()
 def _is_11st(url: str) -> bool: return "11st.co.kr" in urlparse(url).netloc.lower()
-
+def _is_ohou(url: str) -> bool: n = urlparse(url).netloc.lower(); return "ohou.se" in n or "ozip.me" in n
 def _manual_check_result() -> dict:
     return {"success": True, "manual_check": True, "name": None, "price": None,
             "out_of_stock": False, "discontinued": False, "uncertain": False}
 
 
 async def _make_persistent_context(p, profile_dir: Path) -> BrowserContext:
-    """G마켓/옥션 공용: Cloudflare 우회를 위해 headless=False + 저장된 프로필 사용"""
     return await p.chromium.launch_persistent_context(
         str(profile_dir),
         headless=False,
@@ -79,7 +78,6 @@ async def scrape_product(url: str) -> dict:
     if _is_manual_check(url):
         return _manual_check_result()
 
-    # 프로필 없는 사이트: 수동확인 폴백
     if _is_gmarket(url) and not GMARKET_PROFILE_DIR.exists():
         print("    [G마켓] 프로필 없음 → venv/bin/python save_cookies_gmarket.py 먼저 실행")
         return _manual_check_result()
@@ -94,7 +92,9 @@ async def scrape_product(url: str) -> dict:
         elif _is_auction(url):
             context = await _make_persistent_context(p, AUCTION_PROFILE_DIR)
         else:
-            browser = await p.chromium.launch(headless=True)
+            _ohou = _is_ohou(url)
+            browser = await p.chromium.launch(headless=not _ohou,
+                args=["--no-sandbox","--disable-blink-features=AutomationControlled"] if _ohou else [])
             context = await browser.new_context(user_agent=USER_AGENT)
 
         page = await context.new_page()
@@ -109,6 +109,7 @@ async def scrape_product(url: str) -> dict:
             is_lotteon = _is_lotteon(url) or _is_lotteon(final_url)
             is_lgcom   = _is_lgcom(url)   or _is_lgcom(final_url)
             is_11st    = _is_11st(url)    or _is_11st(final_url)
+            is_ohou    = _is_ohou(url)    or _is_ohou(final_url)
 
             # Cloudflare 재차단 감지 (프로필 만료 시 폴백)
             if is_gmarket or is_auction:
@@ -164,7 +165,6 @@ async def scrape_product(url: str) -> dict:
                 )
                 if lge_raw:
                     price = _extract_price(lge_raw)
-            # 롯데온: 혜택가(.advantageBox__top--price) → 정가(.pd-price__info--number)
             if is_lotteon and price is None:
                 for sel in [".advantageBox__top--price", ".pd-price__info--number"]:
                     try:
@@ -222,7 +222,7 @@ async def scrape_product(url: str) -> dict:
             buy_button_found = False
             buy_button_signal = "없음"
             for sel in [
-                'button:has-text("구매하기")', 'a:has-text("구매하기")', 'em:has-text("구매하기")',
+                'button:has-text("구매하기")', 'button:has-text("바로구매")', 'a:has-text("구매하기")', 'em:has-text("구매하기")',
                 "#buyNow", ".btnBuy", ".btn_buy", "#buyBtn", "#btn_buy",
                 'a.btn.cart', '.item__button--cart',
             ]:
