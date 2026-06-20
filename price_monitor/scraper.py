@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
 from playwright.async_api import async_playwright, BrowserContext
+from scraper_11st import _fetch_11st_coupon_discount
 
 # Mac Chrome 최신 버전 User-Agent
 USER_AGENT = (
@@ -51,22 +52,11 @@ def _is_manual_check(url: str) -> bool:
     return any(d in urlparse(url).netloc.lower() for d in MANUAL_CHECK_DOMAINS)
 
 
-def _is_gmarket(url: str) -> bool:
-    return "gmarket.co.kr" in urlparse(url).netloc.lower()
-
-
-def _is_auction(url: str) -> bool:
-    host = urlparse(url).netloc.lower()
-    return "auction.co.kr" in host or "auction.kr" in host
-
-
-def _is_lotteon(url: str) -> bool:
-    return "lotteon.com" in urlparse(url).netloc.lower()
-
-
-def _is_lgcom(url: str) -> bool:
-    return "lge.co.kr" in urlparse(url).netloc.lower()
-
+def _is_gmarket(url: str) -> bool: return "gmarket.co.kr" in urlparse(url).netloc.lower()
+def _is_auction(url: str) -> bool: n = urlparse(url).netloc.lower(); return "auction.co.kr" in n or "auction.kr" in n
+def _is_lotteon(url: str) -> bool: return "lotteon.com" in urlparse(url).netloc.lower()
+def _is_lgcom(url: str) -> bool: return "lge.co.kr" in urlparse(url).netloc.lower()
+def _is_11st(url: str) -> bool: return "11st.co.kr" in urlparse(url).netloc.lower()
 
 def _manual_check_result() -> dict:
     return {"success": True, "manual_check": True, "name": None, "price": None,
@@ -118,6 +108,7 @@ async def scrape_product(url: str) -> dict:
             is_auction = _is_auction(url) or _is_auction(final_url)
             is_lotteon = _is_lotteon(url) or _is_lotteon(final_url)
             is_lgcom   = _is_lgcom(url)   or _is_lgcom(final_url)
+            is_11st    = _is_11st(url)    or _is_11st(final_url)
 
             # Cloudflare 재차단 감지 (프로필 만료 시 폴백)
             if is_gmarket or is_auction:
@@ -128,38 +119,31 @@ async def scrape_product(url: str) -> dict:
                     print(f"    [{site}] 프로필 만료 → {script} 재실행 필요")
                     return _manual_check_result()
 
-            # ── 상품명 ──────────────────────────────────────────────────
             name: Optional[str] = None
             og_title_el = await page.query_selector('meta[property="og:title"]')
             if og_title_el:
                 og_title = await og_title_el.get_attribute("content")
                 if og_title:
                     name = og_title.strip()
-                    # G마켓 og:title은 "G마켓-상품명" 형식
                     if is_gmarket:
                         for prefix in ("G마켓-", "G마켓 -"):
                             if name.startswith(prefix):
                                 name = name[len(prefix):].strip()
                                 break
-                    # 롯데온 og:title은 "[브랜드]상품명 : 롯데ON" 형식
                     if is_lotteon:
                         name = re.sub(r'^\[[^\]]+\]\s*', '', name)
                         if ' : 롯데ON' in name:
                             name = name[:name.index(' : 롯데ON')].strip()
-                    # LG닷컴 og:title은 "상품명 | 모델번호 | LG전자" 형식
                     if is_lgcom and ' | LG전자' in name:
                         name = name[:name.index(' | LG전자')].strip()
 
-            # ── 페이지 전체 텍스트 1회 수집 (가격·판매중단 감지 공용) ────
             body_text: Optional[str] = None
             try:
                 body_text = await page.inner_text("body")
             except Exception:
                 pass
 
-            # ── 가격 1: 사이트별 전용 추출 ──────────────────────────────
             price: Optional[int] = None
-            # LG닷컴: 타임딜/회원/기타 할인가 우선, 없으면 정가 폴백
             if is_lgcom:
                 lge_raw = await page.evaluate(
                     """() => {
@@ -192,7 +176,27 @@ async def scrape_product(url: str) -> dict:
                     except Exception:
                         continue
 
-            # ── 가격 2: og:description (11번가 등) ──────────────────────
+            if is_11st and price is None:
+                raw11 = await page.evaluate(
+                    "() => (typeof productPrdInfo!=='undefined'&&productPrdInfo.finalDscPrc)||null")
+                if isinstance(raw11, (int, float)):
+                    price = int(raw11)
+
+            # 11번가: 쿠폰 공개 API로 최대할인가 계산 (비로그인)
+            if is_11st and price is not None:
+                _cpn = await page.evaluate("""() => {
+                    if (typeof productCouponDownInfo==='undefined') return null;
+                    const {prdNo,selPrc,xsiteCode,wireCode,dscCupnIssNo,dscCupnCalcAmt,
+                           dupCupnIssNo,dupCupnCalcAmt,downloadCupnCnt,dscCupnListCnt,
+                           dupCupnListCnt} = productCouponDownInfo;
+                    return {prdNo,selPrc,xsiteCode,wireCode,dscCupnIssNo,dscCupnCalcAmt,
+                            dupCupnIssNo,dupCupnCalcAmt,downloadCupnCnt,dscCupnListCnt,
+                            dupCupnListCnt};
+                }""")
+                _disc = _fetch_11st_coupon_discount(_cpn)
+                if _disc and PRICE_MIN <= price - _disc <= PRICE_MAX:
+                    price -= _disc
+
             if price is None:
                 _od = await page.query_selector('meta[property="og:description"]')
                 if _od:
@@ -200,7 +204,6 @@ async def scrape_product(url: str) -> dict:
                     if _oc:
                         price = _extract_price(_oc)
 
-            # ── 가격 3: CSS 셀렉터 (11번가 등) ──────────────────────────
             if price is None:
                 for sel in ["strong.price_real", ".price_area strong",
                             ".ItemPrice", ".price_value", ".sell_price"]:
@@ -213,19 +216,15 @@ async def scrape_product(url: str) -> dict:
                     except Exception:
                         continue
 
-            # ── 가격 4: 본문 전체 ────────────────────────────────────────
             if price is None and body_text:
                 price = _extract_price(body_text)
 
-            # ── 재고 상태 판단 (우선순위: 구매버튼→판매중단→품절→uncertain) ──
             buy_button_found = False
             buy_button_signal = "없음"
             for sel in [
-                'button:has-text("구매하기")', 'a:has-text("구매하기")',
-                'em:has-text("구매하기")',       # G마켓
-                "#buyNow", ".btnBuy",           # 옥션
-                ".btn_buy", "#buyBtn", "#btn_buy",
-                'a.btn.cart', '.item__button--cart',  # LG닷컴 (장바구니 담기)
+                'button:has-text("구매하기")', 'a:has-text("구매하기")', 'em:has-text("구매하기")',
+                "#buyNow", ".btnBuy", ".btn_buy", "#buyBtn", "#btn_buy",
+                'a.btn.cart', '.item__button--cart',
             ]:
                 try:
                     el = await page.query_selector(sel)

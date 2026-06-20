@@ -20,7 +20,6 @@ from product_manager import (
 from scraper import scrape_product
 from telegram_bot import (
     notify_error,
-    notify_no_change,
     notify_out_of_stock,
     notify_price_change,
     notify_restock,
@@ -155,8 +154,6 @@ def check_products():
         # 상품 간 2초 딜레이 (서버 부하 방지)
         time.sleep(2)
 
-    if not changed:
-        notify_no_change(len(products))
     print("[모니터링] 이번 회차 확인 완료\n")
 
 
