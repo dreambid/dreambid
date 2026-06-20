@@ -180,7 +180,10 @@ def run_monitoring():
 
 def menu_add_product():
     """상품 추가 메뉴"""
-    name = input("상품명 입력: ").strip()
+    print("\n[등록 가능 쇼핑몰]")
+    print("  ✅ 자동 스크래핑 : 11번가 · G마켓 · 옥션 · 롯데온 · LG닷컴 · 오늘의집 · 하이마트")
+    print("  ⚠️  수동확인     : 쿠팡 (봇 차단으로 자동 스크래핑 불가)")
+    name = input("\n상품명 입력: ").strip()
     url = input("상품 URL 입력: ").strip()
     if name and url:
         add_product(name, url)
