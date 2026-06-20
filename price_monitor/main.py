@@ -1,4 +1,5 @@
 """쇼핑몰 가격 모니터링 CLI 메인 진입점"""
+import argparse
 import asyncio
 import os
 import sys
@@ -106,7 +107,7 @@ def check_products():
 
         # 신호 미감지: 확인필요로 저장 (판매중 가정하지 않음)
         if result.get("uncertain"):
-            update_product_state(product_id, result.get("price"), "unknown")
+            update_product_state(product_id, result.get("price"), "unknown", result.get("name"))
             print(f"    [확인필요] {name}: 구매/품절/판매중단 버튼 모두 미감지 — 직접 확인 권장")
             time.sleep(2)
             continue
@@ -115,8 +116,8 @@ def check_products():
         is_out = result.get("out_of_stock", False)
         current_status = "out_of_stock" if is_out else "in_stock"
 
-        # 상품 상태 저장
-        update_product_state(product_id, current_price, current_status)
+        # 상품 상태 저장 (스크래퍼가 반환한 name이 있으면 함께 갱신)
+        update_product_state(product_id, current_price, current_status, result.get("name"))
 
         # 첫 실행(last_price=None, status=unknown)이면 알림 없이 현재값만 저장
         if last_price is None and last_status == "unknown":
@@ -233,4 +234,15 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("--auto", action="store_true",
+                        help="메뉴 없이 모니터링 루프 즉시 시작 (launchd 전용)")
+    args, _ = parser.parse_known_args()
+
+    if args.auto:
+        # launchd 관리 모드: 코드 감시자 없이 모니터링만 실행
+        # watchdog의 os.execv()와 launchd KeepAlive가 동시에 재시작하면 꼬일 수 있어 비활성화
+        print("[자동모드] launchd 관리 모드로 시작합니다 (코드 감시자 비활성).")
+        run_monitoring()
+    else:
+        main()

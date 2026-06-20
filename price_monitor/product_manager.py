@@ -93,7 +93,7 @@ def list_products():
     print("=" * 65 + "\n")
 
 
-def update_product_state(product_id: str, price: Optional[int], status: str):
+def update_product_state(product_id: str, price: Optional[int], status: str, name: Optional[str] = None):
     """특정 상품의 가격과 상태를 업데이트 (가격 변동 감지를 위해 prev_price 보존)"""
     products = load_products()
     updated = False
@@ -104,6 +104,8 @@ def update_product_state(product_id: str, price: Optional[int], status: str):
             p["last_price"] = price
             p["status"] = status
             p["last_checked"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            if name:
+                p["name"] = name
             updated = True
             break
 

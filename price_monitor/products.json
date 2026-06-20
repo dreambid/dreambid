@@ -4,31 +4,11 @@
       "id": "9483b2c0",
       "name": "[11번가] LG 디오스 AI 오브제컬렉션 냉장고(양문형) + LG 트롬 워시타워(S836MQQ012 + W2421WAMR)",
       "url": "https://www.11st.co.kr/products/9261589133?&lCtgrNo=1001431&mCtgrNo=1002766",
-      "last_price": 3939000,
+      "last_price": 3938500,
       "status": "in_stock",
       "added_at": "2026-06-16 10:21:58",
-      "last_checked": "2026-06-19 08:49:26",
-      "prev_price": 3939000
-    },
-    {
-      "id": "263cd8a7",
-      "name": "[11번가] 삼성 비스포크 키친핏 4도어 냉장고 RM70F64R1ZG",
-      "url": "https://www.11st.co.kr/products/9416161307?&trTypeCd=PW24&trCtgrNo=585021&priceCompare=false",
-      "last_price": 2358600,
-      "status": "in_stock",
-      "added_at": "2026-06-16 10:24:06",
-      "last_checked": "2026-06-19 08:49:29",
-      "prev_price": 2358600
-    },
-    {
-      "id": "a0f0c1a7",
-      "name": "[11번가] [삼성 감사 페스티벌] 삼성 비스포크 AI 냉장고 키친핏 Max 637L RM70F64R1ZG",
-      "url": "https://www.11st.co.kr/products/9013511694",
-      "last_price": null,
-      "status": "discontinued",
-      "added_at": "2026-06-16 16:03:06",
-      "last_checked": "2026-06-19 08:49:32",
-      "prev_price": 2191200
+      "last_checked": "2026-06-20 21:06:17",
+      "prev_price": 3938500
     },
     {
       "id": "89d2a8fc",
@@ -37,18 +17,198 @@
       "last_price": 515000,
       "status": "in_stock",
       "added_at": "2026-06-19 07:14:26",
-      "last_checked": "2026-06-19 08:49:35",
+      "last_checked": "2026-06-20 21:06:22",
       "prev_price": 515000
     },
     {
-      "id": "c00ec03e",
-      "name": "itempage3.auction.co.kr",
-      "url": "https://itempage3.auction.co.kr/DetailView.aspx?itemno=E901635070",
-      "last_price": null,
-      "status": "manual_check",
-      "added_at": "2026-06-19 08:07:22",
-      "last_checked": "2026-06-19 08:07:22",
-      "prev_price": null
+      "id": "4721ee9d",
+      "name": "[캐리어]클라윈드 가정용 통돌이 세탁기 13Kg 실버 KWMT130AWNSO : 롯데ON",
+      "url": "https://s.lotteon.com/eouK1X77rZ?ch_dtl_no=1044428",
+      "last_price": 380160,
+      "status": "in_stock",
+      "added_at": "2026-06-19 13:17:25",
+      "last_checked": "2026-06-20 21:06:27",
+      "prev_price": 384000
+    },
+    {
+      "id": "18d65573",
+      "name": "LG 일반 LED TV (스탠드형) Full HD (107 cm) 43인치 | 43LM6350KNA | LG전자",
+      "url": "https://www.lge.co.kr/tvs/43lm6350kna-stand?share=Y",
+      "last_price": 640000,
+      "status": "in_stock",
+      "added_at": "2026-06-19 13:35:25",
+      "last_checked": "2026-06-20 21:06:35",
+      "prev_price": 640000
+    },
+    {
+      "id": "a5492491",
+      "name": "비스포크 인덕션 3구 전기레인지 NZ63DG403CFK",
+      "url": "https://www.lotteon.com/p/product/LE1220763106",
+      "last_price": 626410,
+      "status": "in_stock",
+      "added_at": "2026-06-19 14:13:16",
+      "last_checked": "2026-06-20 21:06:40",
+      "prev_price": 626410
+    },
+    {
+      "id": "6c431f88",
+      "name": "LG 디오스 AI 오브제컬렉션 냉장고 (양문형) 832L 오브제컬렉션 베이지 / 베이지 | S836MEE022",
+      "url": "https://www.lge.co.kr/refrigerators/s836mee022?sKwd=S836MEE022&sTab=unit_product_list&sRank=1",
+      "last_price": 1440000,
+      "status": "in_stock",
+      "added_at": "2026-06-19 14:14:06",
+      "last_checked": "2026-06-20 21:06:46",
+      "prev_price": 1440000
+    },
+    {
+      "id": "3dcd6a1f",
+      "name": "[11번가] 삼성전자 삼성 RP22C3111Z3 김치냉장고 뚜껑형 221리터 1등급",
+      "url": "https://www.11st.co.kr/products/6493873134?&trTypeCd=04&trCtgrNo=585021&priceCompare=false",
+      "last_price": 839000,
+      "status": "in_stock",
+      "added_at": "2026-06-19 18:12:06",
+      "last_checked": "2026-06-20 21:06:52",
+      "prev_price": 839000
+    },
+    {
+      "id": "98a7cf2b",
+      "name": "[1등급]김치플러스 뚜껑형 김치냉장고 RP22C3111Z1 (221L, 실버, 1등급)",
+      "url": "https://www.e-himart.co.kr/app/goods/goodsDetail?goodsNo=0020570897&fromShop=enuri&utm_source=enuri&utm_medium=PRICE&utm_campaign=enuri",
+      "last_price": 792000,
+      "status": "in_stock",
+      "added_at": "2026-06-19 18:12:45",
+      "last_checked": "2026-06-20 21:06:59",
+      "prev_price": 792000
+    },
+    {
+      "id": "f06b2bda",
+      "name": "비스포크 인덕션 3구 전기레인지 NZ63DG403CFK : 롯데백화점",
+      "url": "https://www.lotteon.com/p/product/LE1220763106?mall_no=2",
+      "last_price": 626410,
+      "status": "in_stock",
+      "added_at": "2026-06-19 18:13:01",
+      "last_checked": "2026-06-20 21:07:04",
+      "prev_price": 626410
+    },
+    {
+      "id": "143e9bcd",
+      "name": "[11번가] 삼성 WF25DG8650BW AI 세탁기 25kg 화이트 1등급",
+      "url": "https://www.11st.co.kr/products/8040079602?&trTypeCd=MAS114&trCtgrNo=585021&checkCtlgPrd=true",
+      "last_price": 935000,
+      "status": "in_stock",
+      "added_at": "2026-06-19 23:39:54",
+      "last_checked": "2026-06-20 21:07:09",
+      "prev_price": 935000
+    },
+    {
+      "id": "c3eadbf8",
+      "name": "[11번가] [최종체감가 178만원대]삼성 비스포크 AI 김치냉장고 4도어 1등급 RK70F49M1A 코타 화이트",
+      "url": "https://www.11st.co.kr/products/9233220284?&trTypeCd=PW24&trCtgrNo=585021&priceCompare=false",
+      "last_price": 2349000,
+      "status": "in_stock",
+      "added_at": "2026-06-20 10:08:25",
+      "last_checked": "2026-06-20 21:07:14",
+      "prev_price": 2349000
+    },
+    {
+      "id": "b8422a21",
+      "name": "[11번가] [최종체감가 176만원대]삼성 비스포크 AI 냉장고 4도어 1등급 푸드쇼케이스 RM70F90M1GD 에센셜베이지",
+      "url": "https://www.11st.co.kr/products/9226044190?&trTypeCd=PW24&trCtgrNo=585021&priceCompare=false",
+      "last_price": 2324000,
+      "status": "in_stock",
+      "added_at": "2026-06-20 10:14:03",
+      "last_checked": "2026-06-20 21:07:19",
+      "prev_price": 2324000
+    },
+    {
+      "id": "482ff361",
+      "name": "[11번가] [최종체감가 176만원대]삼성 비스포크 AI 냉장고 4도어 1등급 푸드쇼케이스 RM70F90M1DD 에센셜다크메탈",
+      "url": "https://www.11st.co.kr/products/9223263806?&trTypeCd=04&trCtgrNo=585021&priceCompare=false",
+      "last_price": 2324000,
+      "status": "in_stock",
+      "added_at": "2026-06-20 10:15:50",
+      "last_checked": "2026-06-20 21:07:24",
+      "prev_price": 2324000
+    },
+    {
+      "id": "e23633a4",
+      "name": "삼성전자 비스포크 AI 637L 키친핏 4도어 냉장고 RM70F64R1X 방문설치 : 롯데백화점",
+      "url": "https://www.lotteon.com/p/product/LE1221457064?mall_no=2&sitmNo=LE1221457064_1329846101&ch_no=100078&ch_dtl_no=1000236&entryPoint=pcs&dp_infw_cd=CHT",
+      "last_price": 2587640,
+      "status": "in_stock",
+      "added_at": "2026-06-20 10:26:01",
+      "last_checked": "2026-06-20 21:07:29",
+      "prev_price": 2587640
+    },
+    {
+      "id": "cf10f546",
+      "name": "Bespoke AI 하이브리드 키친핏맥스 4도어 RM70F64R1G [637L, 베이지]",
+      "url": "https://www.e-himart.co.kr/app/goods/goodsDetail?goodsNo=0061023002&fromShop=enuri&utm_source=enuri&utm_medium=PRICE&utm_campaign=enuri",
+      "last_price": 2290000,
+      "status": "in_stock",
+      "added_at": "2026-06-20 10:27:25",
+      "last_checked": "2026-06-20 21:07:36",
+      "prev_price": 2290000
+    },
+    {
+      "id": "06bd8c20",
+      "name": "[11번가] [최종체감가 178만원대]삼성 비스포크 AI 김치냉장고 4도어 1등급 RK70F49M1ZG 에센셜화이트+에센셜베이지",
+      "url": "https://www.11st.co.kr/products/9233256883?&trTypeCd=PW24&trCtgrNo=585021&priceCompare=false",
+      "last_price": 2349000,
+      "status": "in_stock",
+      "added_at": "2026-06-20 10:32:23",
+      "last_checked": "2026-06-20 21:07:42",
+      "prev_price": 2349000
+    },
+    {
+      "id": "8a38e455",
+      "name": "[11번가] [삼성 공식판매처] 삼성 비스포크 AI 냉장고 키친핏 Max 637L RM70F64R1ZG",
+      "url": "https://www.11st.co.kr/products/9013511694?&trTypeCd=MAS101&trCtgrNo=585021&checkCtlgPrd=true",
+      "last_price": 2315700,
+      "status": "in_stock",
+      "added_at": "2026-06-20 10:35:03",
+      "last_checked": "2026-06-20 21:07:47",
+      "prev_price": 2315700
+    },
+    {
+      "id": "b4872f85",
+      "name": "[11번가] [체감가153만] 삼성 비스포크 냉장고 1등급 4도어 RM70F90R1ZD 905리터 대용량 에센셜화이트",
+      "url": "https://www.11st.co.kr/products/8869419281?&trTypeCd=PW24&trCtgrNo=585021&priceCompare=false",
+      "last_price": 2030000,
+      "status": "in_stock",
+      "added_at": "2026-06-20 10:38:56",
+      "last_checked": "2026-06-20 21:07:52",
+      "prev_price": 2030000
+    },
+    {
+      "id": "a91f5834",
+      "name": "[11번가] 삼성 비스포크 냉장고 RS70F84N2Y 양문형 메탈쿨링 AI 인버터 프리스탠딩 대용량 852L 코타화이트",
+      "url": "https://www.11st.co.kr/products/9225467989?&trTypeCd=04&trCtgrNo=585021&priceCompare=false",
+      "last_price": 1419000,
+      "status": "in_stock",
+      "added_at": "2026-06-20 10:41:02",
+      "last_checked": "2026-06-20 21:07:57",
+      "prev_price": 1419000
+    },
+    {
+      "id": "75d501cb",
+      "name": "[11번가] 삼성전자 냉장고 RS84DG5022B4 양문형 메탈쿨링 AI 인버터 프리스탠딩 대용량 852리터 젠틀블랙",
+      "url": "https://www.11st.co.kr/products/9225472945?&trTypeCd=04&trCtgrNo=585021&priceCompare=false",
+      "last_price": 1349000,
+      "status": "in_stock",
+      "added_at": "2026-06-20 10:43:18",
+      "last_checked": "2026-06-20 21:08:02",
+      "prev_price": 1349000
+    },
+    {
+      "id": "c721ad5d",
+      "name": "[11번가] [체감가217만] 삼성전자 비스포크 키친핏 냉장고 4도어 1등급 RM70F64R1A 올코타화이트",
+      "url": "https://www.11st.co.kr/products/8418870891?&trTypeCd=04&trCtgrNo=585021&priceCompare=false",
+      "last_price": 2830000,
+      "status": "in_stock",
+      "added_at": "2026-06-20 10:44:46",
+      "last_checked": "2026-06-20 21:08:07",
+      "prev_price": 2830000
     }
   ]
 }
