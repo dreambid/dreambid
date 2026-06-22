@@ -17,9 +17,17 @@ def _load_config() -> dict:
 
 
 def send_message(message: str) -> bool:
-    """텔레그램으로 메시지 전송. 토큰 미설정 시 경고만 출력하고 False 반환."""
+    """텔레그램으로 메시지 전송. 토큰 미설정 시 경고만 출력하고 False 반환.
+    재활성화: config.json의 NOTIFICATIONS_ENABLED 를 true 로 변경.
+    """
     try:
         config = _load_config()
+
+        # 알림 일시 중지 플래그 (기본값 True — 키 없으면 활성 상태로 동작)
+        if not config.get("NOTIFICATIONS_ENABLED", True):
+            print("[알림 중지] NOTIFICATIONS_ENABLED=false — 전송 건너뜀")
+            return False
+
         token = config.get("BOT_TOKEN", "")
         chat_id = config.get("CHAT_ID", "")
 
