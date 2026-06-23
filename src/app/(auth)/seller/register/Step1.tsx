@@ -38,15 +38,29 @@ function ConfirmBtn({
 export default function Step1({ data, update, onNext }: Props) {
   const [showSms, setShowSms] = useState(false);
   const [error, setError] = useState('');
+  const [bizError, setBizError] = useState('');
+  const [bizChecking, setBizChecking] = useState(false);
+  const [bizSuccess, setBizSuccess] = useState(false);
 
-  // 사업자 인증 mock — 실제 API 연동 시 교체
   function verifyBiz() {
-    if (!data.bizNum.trim()) {
-      setError('사업자등록번호를 입력해주세요.');
+    const digits = data.bizNum.replace(/\D/g, '');
+    if (!digits) {
+      setBizError('사업자등록번호를 입력해주세요');
       return;
     }
-    setError('');
-    update({ bizVerified: true });
+    if (digits.length !== 10) {
+      setBizError('사업자등록번호 10자리를 정확히 입력해주세요');
+      return;
+    }
+    setBizError('');
+    setBizChecking(true);
+
+    // TODO: 국세청 API 연동 위치
+    setTimeout(() => {
+      setBizChecking(false);
+      setBizSuccess(true);
+      update({ bizVerified: true });
+    }, 900);
   }
 
   // 다음 단계 이동 전 필수값 전체 검증
@@ -59,7 +73,13 @@ export default function Step1({ data, update, onNext }: Props) {
     if (!data.contactName.trim()) { setError('담당자 이름을 입력해주세요.'); return; }
     if (!data.phoneVerified) { setError('휴대폰 인증을 완료해주세요.'); return; }
     if (!data.email.trim()) { setError('이메일을 입력해주세요.'); return; }
-    if (data.password.length < 8) { setError('비밀번호는 8자리 이상이어야 합니다.'); return; }
+    const hasLetter = /[a-zA-Z]/.test(data.password);
+    const hasNumber = /[0-9]/.test(data.password);
+    const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(data.password);
+    if (data.password.length < 8 || !hasLetter || !hasNumber || !hasSpecial) {
+      setError('비밀번호는 영문, 숫자, 특수문자를 모두 포함해 8자리 이상이어야 합니다.');
+      return;
+    }
     if (data.password !== data.passwordConfirm) { setError('비밀번호가 일치하지 않습니다.'); return; }
     if (!data.bank) { setError('은행을 선택해주세요.'); return; }
     if (!data.accountNum.trim()) { setError('계좌번호를 입력해주세요.'); return; }
@@ -81,16 +101,40 @@ export default function Step1({ data, update, onNext }: Props) {
             className={inp}
             placeholder="000-00-00000"
             value={data.bizNum}
-            onChange={e => update({ bizNum: e.target.value })}
+            onChange={e => {
+              let val = e.target.value.replace(/[^0-9]/g, '');
+              if (val.length > 10) val = val.substring(0, 10);
+              val = val.replace(/(\d{3})(\d{0,2})(\d{0,5})/, (_, a, b, c) =>
+                [a, b, c].filter(Boolean).join('-')
+              );
+              update({ bizNum: val });
+              setBizError('');
+            }}
+            disabled={data.bizVerified || bizChecking}
           />
           <button
-            className={`${sm} ${data.bizVerified ? 'text-green-500 border-green-500' : ''}`}
+            className={`${sm} ${
+              data.bizVerified
+                ? 'text-green-500 border-green-500'
+                : bizChecking
+                ? 'text-gray-400 cursor-not-allowed'
+                : ''
+            }`}
             onClick={verifyBiz}
-            disabled={data.bizVerified}
+            disabled={data.bizVerified || bizChecking}
           >
-            {data.bizVerified ? '✓ 완료' : '인증확인'}
+            {data.bizVerified ? '✓ 인증완료' : bizChecking ? '조회중...' : '인증확인'}
           </button>
         </div>
+        {bizError && (
+          <p className="text-[11px] text-[#E24B4A] mt-1">{bizError}</p>
+        )}
+        {bizChecking && (
+          <p className="text-[11px] text-blue-500 mt-1">국세청에 조회하고 있어요...</p>
+        )}
+        {bizSuccess && !bizChecking && (
+          <p className="text-[11px] text-green-500 mt-1">✓ 정상 사업자입니다</p>
+        )}
       </div>
 
       {/* 인증 완료 후 자동입력 필드 및 나머지 섹션 */}
@@ -199,13 +243,29 @@ export default function Step1({ data, update, onNext }: Props) {
             <p className="text-[12px] font-semibold text-gray-500 mb-3">비밀번호 설정</p>
             <div className="mb-3">
               <label className={lbl}>비밀번호 <span className="text-[#E24B4A]">*</span></label>
-              <input type="password" className={inp} placeholder="8자리 이상" value={data.password} onChange={e => update({ password: e.target.value })} />
+              <input type="password" className={inp} placeholder="영문+숫자+특수문자 포함 8자리 이상" value={data.password} onChange={e => update({ password: e.target.value })} />
+              {data.password && (() => {
+                const hasLetter = /[a-zA-Z]/.test(data.password);
+                const hasNumber = /[0-9]/.test(data.password);
+                const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(data.password);
+                const longEnough = data.password.length >= 8;
+                const ok = hasLetter && hasNumber && hasSpecial && longEnough;
+                return (
+                  <p className={`text-[11px] mt-1 ${ok ? 'text-green-500' : 'text-[#E24B4A]'}`}>
+                    {ok ? '✓ 안전한 비밀번호입니다' : '영문, 숫자, 특수문자를 모두 포함해 8자리 이상 입력해주세요'}
+                  </p>
+                );
+              })()}
             </div>
             <div className="mb-3">
               <label className={lbl}>비밀번호 확인 <span className="text-[#E24B4A]">*</span></label>
               <input type="password" className={inp} placeholder="비밀번호 재입력" value={data.passwordConfirm} onChange={e => update({ passwordConfirm: e.target.value })} />
-              {data.passwordConfirm && data.password !== data.passwordConfirm && (
-                <p className="text-[11px] text-[#E24B4A] mt-1">비밀번호가 일치하지 않습니다.</p>
+              {data.passwordConfirm && (
+                data.password === data.passwordConfirm ? (
+                  <p className="text-[11px] text-green-500 mt-1">✓ 비밀번호 일치</p>
+                ) : (
+                  <p className="text-[11px] text-[#E24B4A] mt-1">비밀번호가 일치하지 않습니다.</p>
+                )
               )}
             </div>
           </div>
