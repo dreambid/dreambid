@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 from playwright.async_api import async_playwright, BrowserContext
 from scraper_11st import _fetch_11st_coupon_discount
 from scraper_himart import scrape_himart
+from scraper_ssg import scrape_ssg
 
 # Mac Chrome 최신 버전 User-Agent
 USER_AGENT = (
@@ -60,6 +61,7 @@ def _is_lgcom(url: str) -> bool: return "lge.co.kr" in urlparse(url).netloc.lowe
 def _is_11st(url: str) -> bool: return "11st.co.kr" in urlparse(url).netloc.lower()
 def _is_ohou(url: str) -> bool: n = urlparse(url).netloc.lower(); return "ohou.se" in n or "ozip.me" in n
 def _is_himart(url: str) -> bool: return "e-himart.co.kr" in urlparse(url).netloc.lower()
+def _is_ssg(url: str) -> bool: return "ssg.com" in urlparse(url).netloc.lower()
 def _manual_check_result() -> dict:
     return {"success": True, "manual_check": True, "name": None, "price": None,
             "out_of_stock": False, "discontinued": False, "uncertain": False}
@@ -95,6 +97,7 @@ async def scrape_product(url: str) -> dict:
             context = await _make_persistent_context(p, AUCTION_PROFILE_DIR)
         else:
             _ohou = _is_ohou(url)
+            _ssg  = _is_ssg(url)
             browser = await p.chromium.launch(
                 headless=not _ohou,
                 args=["--no-sandbox", "--disable-blink-features=AutomationControlled"] if _ohou else ["--no-sandbox"],
@@ -115,10 +118,15 @@ async def scrape_product(url: str) -> dict:
             is_11st    = _is_11st(url)    or _is_11st(final_url)
             is_ohou    = _is_ohou(url)    or _is_ohou(final_url)
             is_himart  = _is_himart(url)  or _is_himart(final_url)
+            is_ssg     = _is_ssg(url)     or _is_ssg(final_url)
 
             # 하이마트: 전용 파서로 즉시 반환
             if is_himart:
                 return await scrape_himart(page)
+
+            # SSG: 전용 파서로 즉시 반환
+            if is_ssg:
+                return await scrape_ssg(page)
 
             # Cloudflare 재차단 감지 (프로필 만료 시 폴백)
             if is_gmarket or is_auction:
