@@ -6,6 +6,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 from product_manager import (
+    VALID_CATEGORIES,
     add_product,
     delete_product,
     load_products,
@@ -71,6 +72,7 @@ def get_products():
             "id": p["id"],
             "name": p["name"],
             "url": p["url"],
+            "category": p.get("category", "price_monitor"),
             "status_display": _format_status(p),
             "last_price": p.get("last_price"),
             "prev_price": p.get("prev_price"),
@@ -92,6 +94,9 @@ def post_product():
 
     url = (data.get("url") or "").strip()
     name = (data.get("name") or "").strip()
+    category = (data.get("category") or "price_monitor").strip()
+    if category not in VALID_CATEGORIES:
+        category = "price_monitor"
 
     if not url:
         return jsonify({"error": "url 필드가 필요합니다."}), 400
@@ -109,7 +114,7 @@ def post_product():
             # 추출 실패 시 도메인명을 임시 상품명으로 사용
             name = urlparse(url).netloc
 
-    product = add_product(name, url)
+    product = add_product(name, url, category)
 
     # 스크래핑 성공 시 가격/상태 즉시 저장 후 최신 상태 다시 로드
     if scrape_result.get("success"):

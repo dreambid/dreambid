@@ -27,13 +27,19 @@ def save_products(products: list[dict]):
         json.dump({"products": products}, f, ensure_ascii=False, indent=2)
 
 
-def add_product(name: str, url: str) -> dict:
+VALID_CATEGORIES = {"price_monitor", "competitor"}
+
+
+def add_product(name: str, url: str, category: str = "price_monitor") -> dict:
     """새 상품 등록"""
+    if category not in VALID_CATEGORIES:
+        category = "price_monitor"
     products = load_products()
     product = {
         "id": str(uuid.uuid4())[:8],
         "name": name,
         "url": url,
+        "category": category,
         "last_price": None,
         "status": "unknown",
         "added_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),

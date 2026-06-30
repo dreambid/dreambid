@@ -60,12 +60,22 @@ def send_message(message: str) -> bool:
         return False
 
 
-def notify_price_change(name: str, old_price: int, new_price: int):
+_CATEGORY_LABEL = {
+    "competitor": "[경쟁사]",
+    "price_monitor": "[가격모니터링]",
+}
+
+
+def _cat(category: str) -> str:
+    return _CATEGORY_LABEL.get(category, "[가격모니터링]")
+
+
+def notify_price_change(name: str, old_price: int, new_price: int, category: str = "price_monitor"):
     """가격 변동 알림 전송"""
     direction = "▼ 하락" if new_price < old_price else "▲ 상승"
     diff = abs(new_price - old_price)
     message = (
-        f"💰 <b>가격 변동 알림</b>\n"
+        f"💰 <b>가격 변동 알림</b> {_cat(category)}\n"
         f"상품: {name}\n"
         f"변동: {direction}\n"
         f"이전 가격: {old_price:,}원\n"
@@ -75,21 +85,21 @@ def notify_price_change(name: str, old_price: int, new_price: int):
     send_message(message)
 
 
-def notify_out_of_stock(name: str):
+def notify_out_of_stock(name: str, category: str = "price_monitor"):
     """품절 알림 전송"""
     message = (
-        f"🚫 <b>품절 알림</b>\n"
+        f"🚫 <b>품절 알림</b> {_cat(category)}\n"
         f"상품: {name}\n"
         f"해당 상품이 품절되었습니다."
     )
     send_message(message)
 
 
-def notify_restock(name: str, current_price: int):
+def notify_restock(name: str, current_price: int, category: str = "price_monitor"):
     """재입고 알림 전송"""
     price_str = f"{current_price:,}원" if current_price is not None else "가격 미확인"
     message = (
-        f"✅ <b>재입고 알림</b>\n"
+        f"✅ <b>재입고 알림</b> {_cat(category)}\n"
         f"상품: {name}\n"
         f"현재 가격: {price_str}\n"
         f"재입고되었습니다!"
@@ -103,10 +113,10 @@ def notify_no_change(count: int):
     send_message(message)
 
 
-def notify_error(name: str, error_msg: str):
+def notify_error(name: str, error_msg: str, category: str = "price_monitor"):
     """오류 알림 전송"""
     message = (
-        f"⚠️ <b>오류 알림</b>\n"
+        f"⚠️ <b>오류 알림</b> {_cat(category)}\n"
         f"상품: {name}\n"
         f"오류 내용: {error_msg}"
     )

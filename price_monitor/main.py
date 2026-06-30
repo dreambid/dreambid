@@ -68,6 +68,7 @@ def check_products():
         last_price = product.get("last_price")
         last_status = product.get("status", "unknown")
 
+        category = product.get("category", "price_monitor")
         print(f"  확인 중: {name}")
 
         # 스크래퍼 호출 (비동기를 동기 컨텍스트에서 실행)
@@ -75,7 +76,7 @@ def check_products():
             result = asyncio.run(scrape_product(url))
         except Exception as e:
             print(f"    [오류] {name}: {e}")
-            notify_error(name, str(e))
+            notify_error(name, str(e), category)
             time.sleep(2)
             continue
 
@@ -83,7 +84,7 @@ def check_products():
         if not result.get("success"):
             error_msg = result.get("error", "알 수 없는 오류")
             print(f"    [오류] {name}: {error_msg}")
-            notify_error(name, error_msg)
+            notify_error(name, error_msg, category)
             time.sleep(2)
             continue
 
@@ -99,7 +100,7 @@ def check_products():
             update_product_state(product_id, None, "discontinued")
             if last_status != "discontinued":
                 print(f"    [판매중단] {name}: '현재 판매중인 상품이 아닙니다' 감지")
-                notify_out_of_stock(f"[판매중단] {name}")
+                notify_out_of_stock(f"[판매중단] {name}", category)
             else:
                 print(f"    [판매중단유지] {name}")
             time.sleep(2)
@@ -131,7 +132,7 @@ def check_products():
             # 품절 → 재입고
             price_disp = f"{current_price:,}원" if current_price else "미확인"
             print(f"    [재입고] {name}: {price_disp}")
-            notify_restock(name, current_price)
+            notify_restock(name, current_price, category)
             changed = True
 
         elif last_status != "out_of_stock" and current_status == "out_of_stock":
@@ -144,7 +145,7 @@ def check_products():
             # 가격 변동 감지 (재고 있는 경우에만)
             if current_price != last_price:
                 print(f"    [가격변동] {name}: {last_price:,}원 → {current_price:,}원")
-                notify_price_change(name, last_price, current_price)
+                notify_price_change(name, last_price, current_price, category)
                 changed = True
             else:
                 print(f"    [변동없음] {name}: {current_price:,}원")
