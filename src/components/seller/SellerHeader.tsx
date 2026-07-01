@@ -25,7 +25,7 @@ function CloseIcon() {
 const midNav = [
   { label: '비딩 요청', href: '/seller/requests' },
   { label: '내 비딩', href: '/seller/bids' },
-  { label: '거래/정산', href: '/seller/orders' },
+  { label: '정산관리', href: '/seller/settlement' },
   { label: '홍보 관리', href: '/seller/ads' },
 ];
 

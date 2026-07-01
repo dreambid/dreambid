@@ -1,0 +1,81 @@
+import { getSellerServerSession } from '@/lib/serverSession';
+import SettlementClient, { type Settlement } from '@/components/settlement/SettlementClient';
+
+// 더미 데이터 — 실제 DB 연동 전 화면 검증용
+const DUMMY_SETTLEMENTS: Settlement[] = [
+  {
+    id: 'st-001',
+    settlementNo: 'ST-20260630-01',
+    bidId: 'bid-101',
+    orderId: 'ord-201',
+    productName: 'LG 트롬 드럼세탁기 21kg FX21VN (화이트)',
+    paymentMethod: 'card',
+    paidAt: '2026-06-20T10:30:00',
+    supplyAmount: 909091,
+    vatAmount: 90909,
+    totalAmount: 1000000,
+    platformFee: 20000,
+    pgFee: 14000,
+    deductAmount: 0,
+    sellerPayoutAmount: 980000,
+    finalPayment: 980000,
+    status: 'pending',
+    installConfirmedAt: '2026-06-25',
+    expectedSettlementDate: '2026-07-31',
+    settledAt: null,
+    consumerInvoice: { required: false, status: 'not_applicable', amount: 1000000 },
+    sellerInvoice: { status: 'unissued', amount: 980000 },
+  },
+  {
+    id: 'st-002',
+    settlementNo: 'ST-20260615-02',
+    bidId: 'bid-102',
+    orderId: 'ord-202',
+    productName: '삼성 비스포크 AI 냉장고 키친핏 4도어 637L RM70F64R1ZG',
+    paymentMethod: 'bank_transfer',
+    paidAt: '2026-06-10T14:20:00',
+    supplyAmount: 2090909,
+    vatAmount: 209091,
+    totalAmount: 2300000,
+    platformFee: 46000,
+    pgFee: 0,
+    deductAmount: 10000,
+    sellerPayoutAmount: 2254000,
+    finalPayment: 2244000,
+    status: 'confirmed',
+    installConfirmedAt: '2026-06-15',
+    expectedSettlementDate: '2026-07-31',
+    settledAt: null,
+    consumerInvoice: { required: true, status: 'requested', amount: 2300000 },
+    sellerInvoice: { status: 'requested', amount: 2254000 },
+  },
+  {
+    id: 'st-003',
+    settlementNo: 'ST-20260520-03',
+    bidId: 'bid-103',
+    orderId: 'ord-203',
+    productName: 'LG 휘센 타워 에어컨 18평 FQ18VDWWA2',
+    paymentMethod: 'card',
+    paidAt: '2026-05-18T09:15:00',
+    supplyAmount: 1454545,
+    vatAmount: 145455,
+    totalAmount: 1600000,
+    platformFee: 32000,
+    pgFee: 22400,
+    deductAmount: 0,
+    sellerPayoutAmount: 1568000,
+    finalPayment: 1568000,
+    status: 'settled',
+    installConfirmedAt: '2026-05-22',
+    expectedSettlementDate: '2026-06-30',
+    settledAt: '2026-06-28',
+    consumerInvoice: { required: false, status: 'not_applicable', amount: 1600000 },
+    sellerInvoice: { status: 'issued', amount: 1568000 },
+  },
+];
+
+export default async function SellerSettlementPage() {
+  await getSellerServerSession();
+
+  return <SettlementClient initialSettlements={DUMMY_SETTLEMENTS} />;
+}
