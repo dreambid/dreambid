@@ -1,4 +1,4 @@
-"""Playwright 기반 가격 스크래퍼 (11번가/G마켓/옥션/롯데온/LG닷컴/오늘의집 지원, 쿠팡 수동확인)"""
+"""Playwright 기반 가격 스크래퍼 (11번가/G마켓/옥션/롯데온/LG닷컴/오늘의집/SSG/네이버스마트스토어 지원, 쿠팡 수동확인)"""
 import os
 import re
 from pathlib import Path
@@ -8,6 +8,7 @@ from playwright.async_api import async_playwright, BrowserContext
 from scraper_11st import _fetch_11st_coupon_discount
 from scraper_himart import scrape_himart
 from scraper_ssg import scrape_ssg
+from scraper_naver import scrape_naver
 
 # Mac Chrome 최신 버전 User-Agent
 USER_AGENT = (
@@ -62,6 +63,9 @@ def _is_11st(url: str) -> bool: return "11st.co.kr" in urlparse(url).netloc.lowe
 def _is_ohou(url: str) -> bool: n = urlparse(url).netloc.lower(); return "ohou.se" in n or "ozip.me" in n
 def _is_himart(url: str) -> bool: return "e-himart.co.kr" in urlparse(url).netloc.lower()
 def _is_ssg(url: str) -> bool: return "ssg.com" in urlparse(url).netloc.lower()
+def _is_naver(url: str) -> bool:
+    n = urlparse(url).netloc.lower()
+    return "smartstore.naver.com" in n or "brand.naver.com" in n
 def _manual_check_result() -> dict:
     return {"success": True, "manual_check": True, "name": None, "price": None,
             "out_of_stock": False, "discontinued": False, "uncertain": False}
@@ -97,10 +101,11 @@ async def scrape_product(url: str) -> dict:
             context = await _make_persistent_context(p, AUCTION_PROFILE_DIR)
         else:
             _ohou = _is_ohou(url)
-            _ssg  = _is_ssg(url)
+            _naver = _is_naver(url)
+            _needs_headed = _ohou or _naver
             browser = await p.chromium.launch(
-                headless=not _ohou,
-                args=["--no-sandbox", "--disable-blink-features=AutomationControlled"] if _ohou else ["--no-sandbox"],
+                headless=not _needs_headed,
+                args=["--no-sandbox", "--disable-blink-features=AutomationControlled"] if _needs_headed else ["--no-sandbox"],
             )
             context = await browser.new_context(user_agent=USER_AGENT)
 
@@ -119,6 +124,7 @@ async def scrape_product(url: str) -> dict:
             is_ohou    = _is_ohou(url)    or _is_ohou(final_url)
             is_himart  = _is_himart(url)  or _is_himart(final_url)
             is_ssg     = _is_ssg(url)     or _is_ssg(final_url)
+            is_naver   = _is_naver(url)   or _is_naver(final_url)
 
             # 하이마트: 전용 파서로 즉시 반환
             if is_himart:
@@ -127,6 +133,10 @@ async def scrape_product(url: str) -> dict:
             # SSG: 전용 파서로 즉시 반환
             if is_ssg:
                 return await scrape_ssg(page)
+
+            # 네이버 스마트스토어: 전용 파서로 즉시 반환
+            if is_naver:
+                return await scrape_naver(page)
 
             # Cloudflare 재차단 감지 (프로필 만료 시 폴백)
             if is_gmarket or is_auction:
