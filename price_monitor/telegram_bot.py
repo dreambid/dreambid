@@ -122,6 +122,23 @@ def notify_no_change(count: int):
     send_message(message)
 
 
+_VERIFICATION_SITE_LABEL = {
+    "gmarket": "G마켓",
+    "auction": "옥션",
+    "naver": "네이버",
+}
+
+
+def notify_manual_review(name: str, site: str, category: str = "price_monitor"):
+    """캡차/Cloudflare 체크/로그인 확인 등 점검필요 알림 전송 (브라우저 창이 열려있는 상태)"""
+    site_label = _VERIFICATION_SITE_LABEL.get(site, site)
+    message = (
+        f"🟡 [{site_label}] 점검필요 — 화면 확인 요망\n"
+        f"상품: {name}"
+    )
+    send_message(message)
+
+
 def notify_error(name: str, error_msg: str, category: str = "price_monitor"):
     """오류 알림 전송"""
     message = (

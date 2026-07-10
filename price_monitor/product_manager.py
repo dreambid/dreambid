@@ -29,9 +29,34 @@ def save_products(products: list[dict]):
 
 VALID_CATEGORIES = {"price_monitor", "competitor"}
 
+_SITE_MAP = [
+    ("smartstore.naver.com", "naver"),
+    ("11st.co.kr",           "11st"),
+    ("gmarket.co.kr",        "gmarket"),
+    ("auction.co.kr",        "auction"),
+    ("lotteon.com",          "lotteon"),
+    ("lge.co.kr",            "lgcom"),
+    ("ohou.se",              "ohou"),
+    ("ozip.me",              "ohou"),
+    ("e-himart.co.kr",       "himart"),
+    ("ssg.com",              "ssg"),
+    ("coupang.com",          "coupang"),
+]
 
-def add_product(name: str, url: str, category: str = "price_monitor") -> dict:
-    """새 상품 등록"""
+
+def _detect_site(url: str) -> str:
+    url_lower = url.lower()
+    for domain, site in _SITE_MAP:
+        if domain in url_lower:
+            return site
+    return "unknown"
+
+
+def add_product(name: str, url: str, category: str = "price_monitor") -> Optional[dict]:
+    """새 상품 등록. 오늘의집(ohou.se/ozip.me)은 모니터링 대상에서 제외되어 등록 자체를 차단한다."""
+    if _detect_site(url) == "ohou":
+        print("[등록불가] 오늘의집은 모니터링에서 제외되었습니다.")
+        return None
     if category not in VALID_CATEGORIES:
         category = "price_monitor"
     products = load_products()
@@ -39,6 +64,7 @@ def add_product(name: str, url: str, category: str = "price_monitor") -> dict:
         "id": str(uuid.uuid4())[:8],
         "name": name,
         "url": url,
+        "site": _detect_site(url),
         "category": category,
         "last_price": None,
         "status": "unknown",
@@ -90,6 +116,7 @@ def list_products():
             "unknown": "미확인",
             "manual_check": "수동확인",
             "discontinued": "판매중단",
+            "점검필요": "점검필요",
         }
         status_str = status_map.get(p.get("status", "unknown"), "미확인")
 

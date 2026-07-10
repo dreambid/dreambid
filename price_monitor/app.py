@@ -7,6 +7,7 @@ from flask_cors import CORS
 
 from product_manager import (
     VALID_CATEGORIES,
+    _detect_site,
     add_product,
     delete_product,
     load_products,
@@ -41,6 +42,10 @@ def _format_status(product: dict) -> str:
     # 판매중단
     if status == "discontinued":
         return "판매중단"
+
+    # 캡차/Cloudflare 체크 등 사람 확인 필요 (브라우저 창이 열려있는 상태)
+    if status == "점검필요":
+        return "점검필요"
 
     # 아직 수집 전 또는 확인필요
     if status == "unknown" or last_price is None:
@@ -101,6 +106,10 @@ def post_product():
     if not url:
         return jsonify({"error": "url 필드가 필요합니다."}), 400
 
+    # 오늘의집은 모니터링 대상에서 제외 — 스크래핑을 시도하기 전에 먼저 차단
+    if _detect_site(url) == "ohou":
+        return jsonify({"error": "오늘의집은 모니터링에서 제외되었습니다."}), 400
+
     # 추가 즉시 스크래핑 실행 (상품명, 가격, 재고 상태를 한 번에 수집)
     try:
         scrape_result = asyncio.run(scrape_product(url))
@@ -115,10 +124,14 @@ def post_product():
             name = urlparse(url).netloc
 
     product = add_product(name, url, category)
+    if product is None:
+        return jsonify({"error": "오늘의집은 모니터링에서 제외되었습니다."}), 400
 
     # 스크래핑 성공 시 가격/상태 즉시 저장 후 최신 상태 다시 로드
     if scrape_result.get("success"):
-        if scrape_result.get("manual_check"):
+        if scrape_result.get("verification_needed"):
+            update_product_state(product["id"], None, "점검필요")
+        elif scrape_result.get("manual_check"):
             update_product_state(product["id"], None, "manual_check")
         elif scrape_result.get("discontinued"):
             update_product_state(product["id"], None, "discontinued")

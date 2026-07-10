@@ -1,6 +1,7 @@
 """Playwright 기반 가격 스크래퍼 (11번가/G마켓/옥션/롯데온/LG닷컴/오늘의집/하이마트/SSG/네이버 스마트스토어 지원, 쿠팡 수동확인)"""
 import os
 import re
+import time
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
@@ -28,6 +29,10 @@ MANUAL_CHECK_DOMAINS = frozenset(["coupang.com"])
 GMARKET_PROFILE_DIR = Path(os.path.dirname(__file__)) / "browser_profile_gmarket"
 AUCTION_PROFILE_DIR = Path(os.path.dirname(__file__)) / "browser_profile_auction"
 NAVER_PROFILE_DIR   = Path(os.path.dirname(__file__)) / "browser_profile_naver"
+
+# 점검필요(캡차/Cloudflare/로그인 확인)로 열어둔 세션의 Playwright 연결 참조 보관.
+# GC로 끊기지 않도록 붙잡아두는 용도 — 사용자가 직접 창을 닫을 때까지 살아있는다.
+_OPEN_REVIEW_SESSIONS: list = []
 
 # 명시적 판매중단 문구 (페이지 본문에서 탐색)
 DISCONTINUED_PHRASES = [
@@ -70,6 +75,41 @@ def _manual_check_result() -> dict:
             "out_of_stock": False, "discontinued": False, "uncertain": False}
 
 
+def _verification_result(site: str, hint: str) -> dict:
+    """캡차/Cloudflare 체크/로그인 화면 등 사람 확인이 필요한 경우의 공통 결과.
+    브라우저 창은 닫지 않고 열어두는 것을 전제로 한다 (scrape_product의 leave_open 처리와 짝)."""
+    return {"success": True, "verification_needed": True, "verification_site": site,
+            "verification_hint": hint, "name": None, "price": None,
+            "out_of_stock": False, "discontinued": False, "uncertain": False}
+
+
+def _profile_locked(profile_dir: Path) -> bool:
+    """이미 열려서 점검 대기 중인 persistent 브라우저 창이 있는지 SingletonLock으로 판별.
+    (있으면 같은 프로필로 새 창을 또 여는 걸 막아 창이 무한정 쌓이는 걸 방지)"""
+    return (profile_dir / "SingletonLock").exists()
+
+
+def _site_label(url: str) -> str:
+    if _is_naver(url): return "naver"
+    if _is_gmarket(url): return "gmarket"
+    if _is_auction(url): return "auction"
+    if _is_lotteon(url): return "lotteon"
+    if _is_lgcom(url): return "lgcom"
+    if _is_11st(url): return "11st"
+    if _is_himart(url): return "himart"
+    if _is_ssg(url): return "ssg"
+    if _is_ohou(url): return "ohou"
+    return "unknown"
+
+
+def _diag(url: str, stage: str) -> None:
+    """hang 지점 실측용 타임스탬프 로그. 버퍼링되면 실제 정지 지점보다 앞선 로그가
+    마지막으로 보일 수 있으므로 flush=True로 매번 즉시 파일에 씀."""
+    now = time.time()
+    ts = time.strftime("%H:%M:%S", time.localtime(now)) + f".{int(now * 1000) % 1000:03d}"
+    print(f"[진단 {ts}] [{_site_label(url)}] {stage} | {url}", flush=True)
+
+
 async def _make_persistent_context(
     p, profile_dir: Path, channel: Optional[str] = None
 ) -> BrowserContext:
@@ -85,6 +125,7 @@ async def _make_persistent_context(
 
 async def scrape_product(url: str) -> dict:
     """상품 URL에서 가격·품절·상품명 추출. 반환: success/name/price/out_of_stock/discontinued/uncertain/manual_check"""
+    _diag(url, "scrape_product() 진입")
     # 쿠팡: Akamai WAF 차단 확인됨 → 즉시 수동확인 반환
     if _is_manual_check(url):
         return _manual_check_result()
@@ -99,28 +140,56 @@ async def scrape_product(url: str) -> dict:
         print("    [네이버] 프로필 없음 → test_naver.py 먼저 실행해 로그인 세션 저장")
         return _manual_check_result()
 
-    async with async_playwright() as p:
-        browser = None
+    # 이미 점검 대기 중인 창이 열려있으면(SingletonLock) 새로 열지 않고 바로 재알림만
+    if _is_gmarket(url) and _profile_locked(GMARKET_PROFILE_DIR):
+        return _verification_result("gmarket", "이전에 열어둔 확인 창이 아직 남아있음")
+    if _is_auction(url) and _profile_locked(AUCTION_PROFILE_DIR):
+        return _verification_result("auction", "이전에 열어둔 확인 창이 아직 남아있음")
+
+    # async_playwright()를 수동으로 start/stop 관리한다 (async with를 쓰면 함수를 벗어날 때
+    # 무조건 드라이버 연결이 끊기면서 그 드라이버가 띄운 브라우저도 같이 죽는다 —
+    # leave_open=True인 경우 사람이 확인할 때까지 브라우저 창을 살려둬야 하므로
+    # 이 경우에만 p.stop()을 건너뛴다).
+    _diag(url, "⓪async_playwright().start() 직전 (Node 드라이버 spawn)")
+    p = await async_playwright().start()
+    _diag(url, "⓪async_playwright().start() 직후")
+    browser = None
+    leave_open = False
+    try:
         if _is_gmarket(url):
+            _diag(url, "①②브라우저+persistent context 생성 직전(gmarket)")
             context = await _make_persistent_context(p, GMARKET_PROFILE_DIR)
+            _diag(url, "①②브라우저+persistent context 생성 직후(gmarket)")
         elif _is_auction(url):
+            _diag(url, "①②브라우저+persistent context 생성 직전(auction)")
             context = await _make_persistent_context(p, AUCTION_PROFILE_DIR)
+            _diag(url, "①②브라우저+persistent context 생성 직후(auction)")
         elif _is_naver(url):
+            _diag(url, "①②브라우저+persistent context 생성 직전(naver)")
             context = await _make_persistent_context(p, NAVER_PROFILE_DIR, channel="chrome")
+            _diag(url, "①②브라우저+persistent context 생성 직후(naver)")
         else:
             _ohou = _is_ohou(url)
             _ssg  = _is_ssg(url)
+            _diag(url, "①브라우저 launch 직전")
             browser = await p.chromium.launch(
                 headless=not _ohou,
                 args=["--no-sandbox", "--disable-blink-features=AutomationControlled"] if _ohou else ["--no-sandbox"],
             )
+            _diag(url, "①브라우저 launch 직후")
+            _diag(url, "②context 생성 직전")
             context = await browser.new_context(user_agent=USER_AGENT)
+            _diag(url, "②context 생성 직후")
 
+        _diag(url, "③page.new_page() 직전")
         page = await context.new_page()
+        _diag(url, "③page.new_page() 직후")
 
         try:
             _goto_timeout = 10_000 if _is_naver(url) else TIMEOUT_MS
+            _diag(url, "④page.goto() 직전")
             _response = await page.goto(url, timeout=_goto_timeout, wait_until="domcontentloaded")
+            _diag(url, "④page.goto() 직후")
             await page.wait_for_timeout(500 if _is_naver(url) else 2000)
 
             final_url = page.url
@@ -140,25 +209,40 @@ async def scrape_product(url: str) -> dict:
 
             # 하이마트: 전용 파서로 즉시 반환
             if is_himart:
-                return await scrape_himart(page)
+                _diag(url, "⑤가격추출(himart) 직전")
+                himart_result = await scrape_himart(page)
+                _diag(url, "⑤가격추출(himart) 직후")
+                return himart_result
 
             # SSG: 전용 파서로 즉시 반환
             if is_ssg:
-                return await scrape_ssg(page)
+                _diag(url, "⑤가격추출(ssg) 직전")
+                ssg_result = await scrape_ssg(page)
+                _diag(url, "⑤가격추출(ssg) 직후")
+                return ssg_result
 
             # 네이버 스마트스토어: 전용 파서로 즉시 반환
+            # (로그인/캡차 리다이렉트로 manual_check가 나오면 점검필요로 전환, 창은 유지)
             if is_naver:
-                return await scrape_naver(page)
+                _diag(url, "⑤가격추출(naver) 직전")
+                naver_result = await scrape_naver(page)
+                _diag(url, "⑤가격추출(naver) 직후")
+                if naver_result.get("manual_check"):
+                    leave_open = True
+                    return _verification_result("naver", "로그인/캡차 리다이렉트 감지")
+                return naver_result
 
-            # Cloudflare 재차단 감지 (프로필 만료 시 폴백)
+            # Cloudflare 체크 화면 감지 → 점검필요로 전환, 창은 닫지 않고 사람이 확인할 때까지 유지
             if is_gmarket or is_auction:
                 title = await page.title()
+                _diag(url, f"gmarket/auction title 확인: {title!r}")
                 if "Just a moment" in title or "봇" in title:
-                    site = "G마켓" if is_gmarket else "옥션"
-                    script = "save_cookies_gmarket.py" if is_gmarket else "save_cookies_auction.py"
-                    print(f"    [{site}] 프로필 만료 → {script} 재실행 필요")
-                    return _manual_check_result()
+                    site = "gmarket" if is_gmarket else "auction"
+                    leave_open = True
+                    print(f"    [{'G마켓' if is_gmarket else '옥션'}] Cloudflare 체크 감지 → 창 유지, 점검필요로 기록")
+                    return _verification_result(site, f"Cloudflare 체크 감지 (title={title!r})")
 
+            _diag(url, "⑤가격추출(일반) 직전")
             name: Optional[str] = None
             og_title_el = await page.query_selector('meta[property="og:title"]')
             if og_title_el:
@@ -300,6 +384,13 @@ async def scrape_product(url: str) -> dict:
                 except Exception:
                     continue
 
+            # LG닷컴 "일시품절" 배너: 버튼(.oneLineBtn.sold)이 DOM엔 있지만
+            # 스탠드형/벽걸이형 등 변형 탭 구조 때문에 Playwright의 is_visible()이
+            # False로 나와 위 셀렉터 루프가 못 잡음 → 본문 텍스트로 폴백 확인
+            if is_lgcom and not sold_out_found and body_text and "일시품절" in body_text:
+                sold_out_found = True
+                sold_out_signal = "일시품절(본문 텍스트)"
+
             if buy_button_found:
                 out_of_stock, discontinued, uncertain = False, False, False
                 status_label = "판매중"
@@ -318,6 +409,7 @@ async def scrape_product(url: str) -> dict:
                 f"판매중단={discontinued_signal} | "
                 f"품절={sold_out_signal} → {status_label}"
             )
+            _diag(url, "⑤가격추출(일반) 직후")
 
             return {
                 "success": True,
@@ -332,7 +424,21 @@ async def scrape_product(url: str) -> dict:
             return {"success": False, "error": str(e)}
 
         finally:
-            if browser is not None:
-                await browser.close()
-            else:
-                await context.close()
+            if not leave_open:
+                if browser is not None:
+                    _diag(url, "⑥browser.close() 직전 (일반 context)")
+                    await browser.close()
+                    _diag(url, "⑥browser.close() 직후 (일반 context)")
+                else:
+                    _diag(url, "⑥context.close() 직전 (persistent context: gmarket/auction/naver)")
+                    await context.close()
+                    _diag(url, "⑥context.close() 직후 (persistent context: gmarket/auction/naver)")
+
+    finally:
+        if leave_open:
+            # 사람이 확인할 때까지 드라이버 연결을 끊지 않고 참조를 붙잡아 GC를 방지한다.
+            _OPEN_REVIEW_SESSIONS.append(p)
+        else:
+            _diag(url, "⑦p.stop() 직전 (Playwright 드라이버 종료)")
+            await p.stop()
+            _diag(url, "⑦p.stop() 직후")

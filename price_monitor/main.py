@@ -22,11 +22,13 @@ from scraper import (
     scrape_product,
     _is_gmarket,
     _is_auction,
-    _is_ohou,
     _is_naver,
+    _diag,
+    _OPEN_REVIEW_SESSIONS,
 )
 from telegram_bot import (
     notify_error,
+    notify_manual_review,
     notify_out_of_stock,
     notify_price_change,
     notify_restock,
@@ -36,13 +38,14 @@ from telegram_bot import (
 _WATCH_DIR = Path(__file__).parent
 
 # 쇼핑몰 그룹별 동시 실행 수 제한 (봇 차단 회피 — 사이트 부하 특성에 맞춰 그룹 분리)
+# 오늘의집(ohou)은 등록 자체가 차단되어 더 이상 이 분류에 실질적으로 걸리지 않는다.
 # NOTE: asyncio.Semaphore/Lock은 Python 3.9에서 생성 시점의 이벤트 루프에 바인딩된다.
 # 모듈 임포트 시점(asyncio.run() 호출 전)에 만들면 이후 asyncio.run()이 새로 만드는
 # 루프와 불일치해 "attached to a different loop" 오류가 난다. 그래서 실제 사용 시점인
 # check_products() 코루틴 안에서 매번 새로 생성한다 (아래 None은 타입 힌트 목적).
-HEADLESS_SEM: Optional[asyncio.Semaphore] = None                # 11번가/롯데온/LG닷컴/하이마트/SSG + 미분류 URL
-GMARKET_AUCTION_OHOUSE_SEM: Optional[asyncio.Semaphore] = None  # G마켓/옥션/오늘의집 (persistent context 세션 공유)
-NAVER_SEM: Optional[asyncio.Semaphore] = None                   # 네이버 스마트스토어
+HEADLESS_SEM: Optional[asyncio.Semaphore] = None            # 11번가/롯데온/LG닷컴/하이마트/SSG + 미분류 URL
+GMARKET_AUCTION_SEM: Optional[asyncio.Semaphore] = None      # G마켓/옥션 (persistent context 세션 공유)
+NAVER_SEM: Optional[asyncio.Semaphore] = None                # 네이버 스마트스토어
 
 # products.json 읽기→수정→쓰기 전체 구간 보호 (update_product_state 동시 호출 대비)
 _PRODUCTS_LOCK: Optional[asyncio.Lock] = None
@@ -73,12 +76,22 @@ def _semaphore_for(url: str) -> asyncio.Semaphore:
     """URL이 속한 쇼핑몰 그룹에 맞는 세마포어 반환 (scraper.py의 기존 판별 함수 재사용)"""
     if _is_naver(url):
         return NAVER_SEM
-    if _is_gmarket(url) or _is_auction(url) or _is_ohou(url):
-        return GMARKET_AUCTION_OHOUSE_SEM
+    if _is_gmarket(url) or _is_auction(url):
+        return GMARKET_AUCTION_SEM
     return HEADLESS_SEM
 
 
 async def _check_one_product(product: dict) -> None:
+    """gather 데드락 추적용 얇은 래퍼. 내부에 return이 여러 곳(early return)이라
+    매번 앞에 로그를 넣는 대신, finally 하나로 "진짜 함수를 빠져나가는 순간"을 잡는다."""
+    url = product.get("url", "?")
+    try:
+        await _check_one_product_impl(product)
+    finally:
+        _diag(url, "⑧ _check_one_product 완전 종료 (return 직전/직후)")
+
+
+async def _check_one_product_impl(product: dict) -> None:
     """상품 1개의 가격/상태를 확인하고 변동 시 알림. 실패 시 해당 상품만 manual_check로 기록."""
     product_id = product["id"]
     name = product["name"]
@@ -90,10 +103,13 @@ async def _check_one_product(product: dict) -> None:
     print(f"  확인 중: {name}")
 
     # 스크래퍼 호출 (쇼핑몰 그룹별 세마포어로 동시 실행 수 제한)
+    # asyncio.wait_for로 상위 타임아웃을 걸어, scrape_product 내부(또는 그 아래
+    # Playwright/브라우저 서브프로세스)가 원인 불명으로 응답 없이 멈추더라도
+    # 세마포어 슬롯이 영구히 소비되지 않고 다음 상품으로 넘어가도록 강제한다.
     try:
         sem = _semaphore_for(url)
         async with sem:
-            result = await scrape_product(url)
+            result = await asyncio.wait_for(scrape_product(url), timeout=45)
     except Exception as e:
         print(f"    [오류] {name}: {e}")
         async with _PRODUCTS_LOCK:
@@ -110,7 +126,19 @@ async def _check_one_product(product: dict) -> None:
         notify_error(name, error_msg, category)
         return
 
-    # WAF 차단 도메인(쿠팡/옥션) · 네이버 429 등: 수동확인으로 저장하고 종료
+    # 캡차/Cloudflare 체크/로그인 확인 등 사람이 봐야 하는 화면: 점검필요로 기록.
+    # 브라우저 창은 scraper.py 쪽에서 닫지 않고 열어둔 채로 반환하므로, 여기서는
+    # 세마포어(이미 async with sem: 블록을 빠져나오며 반납됨)와 상태 기록만 처리한다.
+    if result.get("verification_needed"):
+        site = result.get("verification_site", "?")
+        hint = result.get("verification_hint", "")
+        async with _PRODUCTS_LOCK:
+            update_product_state(product_id, None, "점검필요")
+        print(f"    [점검필요] {name}: {site} 확인 화면 감지({hint}) — 창을 열어뒀으니 직접 확인 필요")
+        notify_manual_review(name, site, category)
+        return
+
+    # WAF 차단 도메인(쿠팡) 등: 수동확인으로 저장하고 종료
     if result.get("manual_check"):
         async with _PRODUCTS_LOCK:
             update_product_state(product_id, None, "manual_check")
@@ -175,10 +203,10 @@ async def _check_one_product(product: dict) -> None:
 
 async def check_products():
     """등록된 모든 상품의 가격 및 상태를 동시에 확인 (상품별 태스크 + gather)"""
-    global HEADLESS_SEM, GMARKET_AUCTION_OHOUSE_SEM, NAVER_SEM, _PRODUCTS_LOCK
+    global HEADLESS_SEM, GMARKET_AUCTION_SEM, NAVER_SEM, _PRODUCTS_LOCK
     # 현재 실행 중인 이벤트 루프에 바인딩되도록 매 사이클 새로 생성
     HEADLESS_SEM = asyncio.Semaphore(4)
-    GMARKET_AUCTION_OHOUSE_SEM = asyncio.Semaphore(1)
+    GMARKET_AUCTION_SEM = asyncio.Semaphore(1)
     NAVER_SEM = asyncio.Semaphore(1)
     _PRODUCTS_LOCK = asyncio.Lock()
 
@@ -190,7 +218,9 @@ async def check_products():
     print(f"\n[모니터링] {len(products)}개 상품 확인 시작...")
 
     tasks = [_check_one_product(product) for product in products]
+    _diag("gather", f"asyncio.gather() 대기 시작... (leave_open 누적 세션 수={len(_OPEN_REVIEW_SESSIONS)})")
     results = await asyncio.gather(*tasks, return_exceptions=True)
+    _diag("gather", f"asyncio.gather() 모든 태스크 완료 및 반환 성공! (leave_open 누적 세션 수={len(_OPEN_REVIEW_SESSIONS)})")
 
     # 태스크 내부 try/except를 뚫고 나온 미처리 예외만 별도 로그 (전체 배치는 계속 진행됨)
     for product, outcome in zip(products, results):
