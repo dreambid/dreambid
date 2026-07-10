@@ -79,8 +79,16 @@ async def scrape_ssg(page) -> dict:
         except Exception:
             continue
 
+    # SSG 실제 클래스는 <a class="cdtl_disabled cdtl_btn_soldout">/<a class="cdtl_btn_disabled">
+    # (button이 아니라 a 태그, [class*='soldOut']는 대소문자 불일치로 못 잡음 → soldout 소문자로)
     soldout_found = False
-    for sel in ['button:has-text("품절")', ".btn_soldout", "[class*='soldOut']"]:
+    for sel in [
+        'button:has-text("품절")',
+        'a:has-text("품절")',
+        ".cdtl_btn_soldout",
+        ".cdtl_btn_disabled",
+        ".btn_soldout", "[class*='soldout']",
+    ]:
         try:
             el = await page.query_selector(sel)
             if el and await el.is_visible():

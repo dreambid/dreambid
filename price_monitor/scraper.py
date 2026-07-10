@@ -232,15 +232,27 @@ async def scrape_product(url: str) -> dict:
                     return _verification_result("naver", "로그인/캡차 리다이렉트 감지")
                 return naver_result
 
-            # Cloudflare 체크 화면 감지 → 점검필요로 전환, 창은 닫지 않고 사람이 확인할 때까지 유지
+            # Cloudflare/봇 확인 화면 감지 → 점검필요로 전환, 창은 닫지 않고 사람이 확인할 때까지 유지
+            # (영문 Cloudflare "Just a moment"뿐 아니라, G마켓 자체 한글 봇확인 화면
+            # "잠시만 기다리십시오…"는 타이틀에 "봇"이 없고 본문에만 있어 별도 폴백 필요)
             if is_gmarket or is_auction:
                 title = await page.title()
+                body_snippet: Optional[str] = None
+                try:
+                    body_snippet = await page.inner_text("body")
+                except Exception:
+                    pass
                 _diag(url, f"gmarket/auction title 확인: {title!r}")
-                if "Just a moment" in title or "봇" in title:
+                if (
+                    "Just a moment" in title
+                    or "잠시만 기다리십시오" in title
+                    or "봇" in title
+                    or (body_snippet and "봇 확인" in body_snippet)
+                ):
                     site = "gmarket" if is_gmarket else "auction"
                     leave_open = True
-                    print(f"    [{'G마켓' if is_gmarket else '옥션'}] Cloudflare 체크 감지 → 창 유지, 점검필요로 기록")
-                    return _verification_result(site, f"Cloudflare 체크 감지 (title={title!r})")
+                    print(f"    [{'G마켓' if is_gmarket else '옥션'}] 봇 확인 화면 감지 → 창 유지, 점검필요로 기록")
+                    return _verification_result(site, f"봇 확인 화면 감지 (title={title!r})")
 
             _diag(url, "⑤가격추출(일반) 직전")
             name: Optional[str] = None
@@ -345,6 +357,10 @@ async def scrape_product(url: str) -> dict:
             buy_button_found = False
             buy_button_signal = "없음"
             for sel in [
+                # LG닷컴: 모바일용/PC용 "구매하기" 버튼을 둘 다 DOM에 렌더링하고 CSS로만
+                # 하나를 숨김. query_selector는 첫 매칭(모바일용, 숨김)만 보므로 뒤에 있는
+                # 범용 'a:has-text("구매하기")'보다 먼저 PC 영역으로 스코프를 좁혀 확인
+                '.btn-group.is-pc a:has-text("구매하기")',
                 'button:has-text("구매하기")', 'button:has-text("바로구매")', 'a:has-text("구매하기")', 'em:has-text("구매하기")',
                 "#buyNow", ".btnBuy", ".btn_buy", "#buyBtn", "#btn_buy",
                 'a.btn.cart', '.item__button--cart',
