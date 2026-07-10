@@ -80,8 +80,13 @@ async def scrape_himart(page) -> dict:
         except Exception:
             continue
 
+    # 재고 일시품절 배너: 클래스명이 "abSoldOut"처럼 대문자를 포함해
+    # 기존 "[class*='soldOut']"(소문자, 대소문자 구분됨)와 매칭이 안 됨 → 별도 셀렉터 추가
     soldout_found = False
-    for sel in [".soldout", "[class*='soldOut']", 'button:has-text("품절")']:
+    for sel in [
+        ".hm-purchase-tool__sale-disabled",
+        ".soldout", "[class*='soldOut']", 'button:has-text("품절")',
+    ]:
         try:
             el = await page.query_selector(sel)
             if el and await el.is_visible():
@@ -89,6 +94,15 @@ async def scrape_himart(page) -> dict:
                 break
         except Exception:
             continue
+
+    # 폴백: 클래스명이 바뀌어도 대비해 배너 문구 자체를 본문에서 확인
+    if not soldout_found:
+        try:
+            body_text = await page.inner_text("body")
+            if "재고가 일시 품절된 상품입니다" in body_text:
+                soldout_found = True
+        except Exception:
+            pass
 
     if buy_found:
         out_of_stock, discontinued, uncertain = False, False, False
