@@ -32,6 +32,7 @@ from telegram_bot import (
     notify_out_of_stock,
     notify_price_change,
     notify_restock,
+    notify_selector_check,
 )
 
 
@@ -113,7 +114,7 @@ async def _check_one_product_impl(product: dict) -> None:
     except Exception as e:
         print(f"    [오류] {name}: {e}")
         async with _PRODUCTS_LOCK:
-            update_product_state(product_id, None, "manual_check")
+            update_product_state(product_id, None, "manual_check", unknown_count=0)
         notify_error(name, str(e), category)
         return
 
@@ -122,7 +123,7 @@ async def _check_one_product_impl(product: dict) -> None:
         error_msg = result.get("error", "알 수 없는 오류")
         print(f"    [오류] {name}: {error_msg}")
         async with _PRODUCTS_LOCK:
-            update_product_state(product_id, None, "manual_check")
+            update_product_state(product_id, None, "manual_check", unknown_count=0)
         notify_error(name, error_msg, category)
         return
 
@@ -133,7 +134,7 @@ async def _check_one_product_impl(product: dict) -> None:
         site = result.get("verification_site", "?")
         hint = result.get("verification_hint", "")
         async with _PRODUCTS_LOCK:
-            update_product_state(product_id, None, "점검필요")
+            update_product_state(product_id, None, "점검필요", unknown_count=0)
         print(f"    [점검필요] {name}: {site} 확인 화면 감지({hint}) — 창을 열어뒀으니 직접 확인 필요")
         notify_manual_review(name, site, category)
         return
@@ -141,14 +142,14 @@ async def _check_one_product_impl(product: dict) -> None:
     # WAF 차단 도메인(쿠팡) 등: 수동확인으로 저장하고 종료
     if result.get("manual_check"):
         async with _PRODUCTS_LOCK:
-            update_product_state(product_id, None, "manual_check")
+            update_product_state(product_id, None, "manual_check", unknown_count=0)
         print(f"    [수동확인] {name}: 자동 스크래핑 불가 - 직접 확인 필요")
         return
 
     # 판매중단 감지: 저장 후 상태 변화 시 알림
     if result.get("discontinued"):
         async with _PRODUCTS_LOCK:
-            update_product_state(product_id, None, "discontinued")
+            update_product_state(product_id, None, "discontinued", unknown_count=0)
         if last_status != "discontinued":
             print(f"    [판매중단] {name}: '현재 판매중인 상품이 아닙니다' 감지")
             notify_out_of_stock(f"[판매중단] {name}", category)
@@ -157,19 +158,26 @@ async def _check_one_product_impl(product: dict) -> None:
         return
 
     # 신호 미감지: 확인필요로 저장 (판매중 가정하지 않음)
+    # unknown_count가 3에 도달하는 순간에만(4회차부터는 재알림 안 함) 셀렉터 점검 알림
     if result.get("uncertain"):
+        new_unknown_count = product.get("unknown_count", 0) + 1
         async with _PRODUCTS_LOCK:
-            update_product_state(product_id, result.get("price"), "unknown", result.get("name"))
-        print(f"    [확인필요] {name}: 구매/품절/판매중단 버튼 모두 미감지 — 직접 확인 권장")
+            update_product_state(
+                product_id, result.get("price"), "unknown", result.get("name"),
+                unknown_count=new_unknown_count,
+            )
+        print(f"    [확인필요] {name}: 구매/품절/판매중단 버튼 모두 미감지 — 직접 확인 권장 (연속 {new_unknown_count}회)")
+        if new_unknown_count == 3:
+            notify_selector_check(name, product.get("site", "?"), url)
         return
 
     current_price: Optional[int] = result.get("price")
     is_out = result.get("out_of_stock", False)
     current_status = "out_of_stock" if is_out else "in_stock"
 
-    # 상품 상태 저장 (스크래퍼가 반환한 name이 있으면 함께 갱신)
+    # 상품 상태 저장 (스크래퍼가 반환한 name이 있으면 함께 갱신, unknown 연속 기록은 리셋)
     async with _PRODUCTS_LOCK:
-        update_product_state(product_id, current_price, current_status, result.get("name"))
+        update_product_state(product_id, current_price, current_status, result.get("name"), unknown_count=0)
 
     # 첫 실행(last_price=None, status=unknown)이면 알림 없이 현재값만 저장
     if last_price is None and last_status == "unknown":

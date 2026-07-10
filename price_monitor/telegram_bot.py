@@ -139,6 +139,15 @@ def notify_manual_review(name: str, site: str, category: str = "price_monitor"):
     send_message(message)
 
 
+def notify_selector_check(name: str, site: str, url: str):
+    """확인필요(unknown) 상태가 3회 연속 나올 때 셀렉터 점검 알림 전송"""
+    message = (
+        f"🔍 [{name}] ({site}) 셀렉터 확인 필요 — unknown 3회 연속\n"
+        f"{url}"
+    )
+    send_message(message)
+
+
 def notify_error(name: str, error_msg: str, category: str = "price_monitor"):
     """오류 알림 전송"""
     message = (

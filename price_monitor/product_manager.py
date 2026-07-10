@@ -126,8 +126,15 @@ def list_products():
     print("=" * 65 + "\n")
 
 
-def update_product_state(product_id: str, price: Optional[int], status: str, name: Optional[str] = None):
-    """특정 상품의 가격과 상태를 업데이트 (가격 변동 감지를 위해 prev_price 보존)"""
+def update_product_state(
+    product_id: str,
+    price: Optional[int],
+    status: str,
+    name: Optional[str] = None,
+    unknown_count: Optional[int] = None,
+):
+    """특정 상품의 가격과 상태를 업데이트 (가격 변동 감지를 위해 prev_price 보존).
+    unknown_count가 주어지면 '확인필요(unknown)' 연속 횟수를 함께 기록한다."""
     products = load_products()
     updated = False
     for p in products:
@@ -139,6 +146,8 @@ def update_product_state(product_id: str, price: Optional[int], status: str, nam
             p["last_checked"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             if name:
                 p["name"] = name
+            if unknown_count is not None:
+                p["unknown_count"] = unknown_count
             updated = True
             break
 
