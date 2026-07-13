@@ -7,6 +7,7 @@ from typing import Optional
 from urllib.parse import urlparse
 from playwright.async_api import async_playwright, BrowserContext
 from scraper_11st import _fetch_11st_coupon_discount
+from scraper_common import retry_until_stable
 from scraper_himart import scrape_himart
 from scraper_naver import scrape_naver
 from scraper_ssg import scrape_ssg
@@ -311,26 +312,35 @@ async def scrape_product(url: str) -> dict:
                     except Exception:
                         continue
 
+            # 11번가: 기본가(productPrdInfo.finalDscPrc) + 쿠폰 공개 API 최대할인가.
+            # 쿠폰이 있다고 나오는데 할인 계산이 실패하면 "미반영"으로 보고 재시도.
             if is_11st and price is None:
-                raw11 = await page.evaluate(
-                    "() => (typeof productPrdInfo!=='undefined'&&productPrdInfo.finalDscPrc)||null")
-                if isinstance(raw11, (int, float)):
-                    price = int(raw11)
+                async def _attempt_11st_price():
+                    raw11 = await page.evaluate(
+                        "() => (typeof productPrdInfo!=='undefined'&&productPrdInfo.finalDscPrc)||null")
+                    if not isinstance(raw11, (int, float)):
+                        return None, False
+                    base_price = int(raw11)
 
-            # 11번가: 쿠폰 공개 API로 최대할인가 계산 (비로그인)
-            if is_11st and price is not None:
-                _cpn = await page.evaluate("""() => {
-                    if (typeof productCouponDownInfo==='undefined') return null;
-                    const {prdNo,selPrc,xsiteCode,wireCode,dscCupnIssNo,dscCupnCalcAmt,
-                           dupCupnIssNo,dupCupnCalcAmt,downloadCupnCnt,dscCupnListCnt,
-                           dupCupnListCnt} = productCouponDownInfo;
-                    return {prdNo,selPrc,xsiteCode,wireCode,dscCupnIssNo,dscCupnCalcAmt,
-                            dupCupnIssNo,dupCupnCalcAmt,downloadCupnCnt,dscCupnListCnt,
-                            dupCupnListCnt};
-                }""")
-                _disc = _fetch_11st_coupon_discount(_cpn)
-                if _disc and PRICE_MIN <= price - _disc <= PRICE_MAX:
-                    price -= _disc
+                    cpn = await page.evaluate("""() => {
+                        if (typeof productCouponDownInfo==='undefined') return null;
+                        const {prdNo,selPrc,xsiteCode,wireCode,dscCupnIssNo,dscCupnCalcAmt,
+                               dupCupnIssNo,dupCupnCalcAmt,downloadCupnCnt,dscCupnListCnt,
+                               dupCupnListCnt} = productCouponDownInfo;
+                        return {prdNo,selPrc,xsiteCode,wireCode,dscCupnIssNo,dscCupnCalcAmt,
+                                dupCupnIssNo,dupCupnCalcAmt,downloadCupnCnt,dscCupnListCnt,
+                                dupCupnListCnt};
+                    }""")
+                    disc = _fetch_11st_coupon_discount(cpn)
+                    coupon_expected = bool(cpn and (cpn.get("downloadCupnCnt", 0) or cpn.get("dupCupnListCnt", 0)))
+                    final_price = base_price
+                    if disc and PRICE_MIN <= base_price - disc <= PRICE_MAX:
+                        final_price = base_price - disc
+
+                    is_stable = not (coupon_expected and disc is None)
+                    return final_price, is_stable
+
+                price = await retry_until_stable(_attempt_11st_price)
 
             if price is None:
                 _od = await page.query_selector('meta[property="og:description"]')
