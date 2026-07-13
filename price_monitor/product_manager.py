@@ -164,9 +164,11 @@ def update_product_state(
     status: str,
     name: Optional[str] = None,
     unknown_count: Optional[int] = None,
+    ssg_block_count: Optional[int] = None,
 ):
     """특정 상품의 가격과 상태를 업데이트 (가격 변동 감지를 위해 prev_price 보존).
-    unknown_count가 주어지면 '확인필요(unknown)' 연속 횟수를 함께 기록한다."""
+    unknown_count가 주어지면 '확인필요(unknown)' 연속 횟수를, ssg_block_count가 주어지면
+    SSG 차단 페이지 연속 감지 횟수를 함께 기록한다."""
     products = load_products()
     updated = False
     for p in products:
@@ -180,6 +182,8 @@ def update_product_state(
                 p["name"] = name
             if unknown_count is not None:
                 p["unknown_count"] = unknown_count
+            if ssg_block_count is not None:
+                p["ssg_block_count"] = ssg_block_count
             updated = True
             break
 

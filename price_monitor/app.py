@@ -39,6 +39,8 @@ def _format_status(product: dict) -> str:
             return "G마켓 (수동확인)"
         elif "auction" in host:
             return "옥션 (수동확인)"
+        elif "ssg.com" in host:
+            return "SSG (수동확인)"
         return "수동확인 필요"
 
     # 판매중단
