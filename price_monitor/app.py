@@ -6,11 +6,13 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 from product_manager import (
+    VALID_BRAND_CATEGORIES,
     VALID_CATEGORIES,
     _detect_site,
     add_product,
     delete_product,
     load_products,
+    set_brand_category,
     update_product_state,
 )
 from scraper import scrape_product
@@ -78,6 +80,7 @@ def get_products():
             "name": p["name"],
             "url": p["url"],
             "category": p.get("category", "price_monitor"),
+            "brand_category": p.get("brand_category"),
             "status_display": _format_status(p),
             "last_price": p.get("last_price"),
             "prev_price": p.get("prev_price"),
@@ -145,6 +148,23 @@ def post_product():
 
     product["status_display"] = _format_status(product)
     return jsonify(product), 201
+
+
+@app.route("/api/products/<product_id>/brand-category", methods=["PATCH"])
+def patch_brand_category(product_id):
+    """상품의 brand_category만 업데이트 (가격/상태는 안 건드림)"""
+    data = request.get_json(silent=True) or {}
+    brand_category = data.get("brand_category")
+    if brand_category is not None and brand_category not in VALID_BRAND_CATEGORIES:
+        return jsonify({"error": f"허용되지 않는 brand_category 값: {brand_category}"}), 400
+    if not any(p["id"] == product_id for p in load_products()):
+        return jsonify({"error": f"ID '{product_id}' 상품을 찾을 수 없습니다."}), 404
+    set_brand_category(product_id, brand_category)
+    return jsonify({
+        "message": "brand_category가 업데이트되었습니다.",
+        "id": product_id,
+        "brand_category": brand_category,
+    }), 200
 
 
 @app.route("/api/products/<product_id>", methods=["DELETE"])

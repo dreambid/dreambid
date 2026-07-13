@@ -141,6 +141,23 @@ def list_products():
     print("=" * 65 + "\n")
 
 
+def set_brand_category(product_id: str, brand_category: Optional[str]) -> bool:
+    """상품의 brand_category만 업데이트 (가격/상태는 건드리지 않음).
+    잘못된 값이면 False, 상품을 못 찾아도 False를 반환한다."""
+    if brand_category is not None and brand_category not in VALID_BRAND_CATEGORIES:
+        return False
+    products = load_products()
+    updated = False
+    for p in products:
+        if p["id"] == product_id:
+            p["brand_category"] = brand_category
+            updated = True
+            break
+    if updated:
+        save_products(products)
+    return updated
+
+
 def update_product_state(
     product_id: str,
     price: Optional[int],
