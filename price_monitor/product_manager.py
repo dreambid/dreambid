@@ -29,6 +29,13 @@ def save_products(products: list[dict]):
 
 VALID_CATEGORIES = {"price_monitor", "competitor"}
 
+# category(가격모니터링/경쟁사)와 완전히 독립적인 별도 분류. 미지정 시 None.
+VALID_BRAND_CATEGORIES = {
+    "samsung_fridge", "samsung_washer", "samsung_tv", "samsung_etc",
+    "lg_fridge", "lg_washer", "lg_tv", "lg_etc",
+    "other_brand",
+}
+
 _SITE_MAP = [
     ("smartstore.naver.com", "naver"),
     ("11st.co.kr",           "11st"),
@@ -52,13 +59,20 @@ def _detect_site(url: str) -> str:
     return "unknown"
 
 
-def add_product(name: str, url: str, category: str = "price_monitor") -> Optional[dict]:
+def add_product(
+    name: str,
+    url: str,
+    category: str = "price_monitor",
+    brand_category: Optional[str] = None,
+) -> Optional[dict]:
     """새 상품 등록. 오늘의집(ohou.se/ozip.me)은 모니터링 대상에서 제외되어 등록 자체를 차단한다."""
     if _detect_site(url) == "ohou":
         print("[등록불가] 오늘의집은 모니터링에서 제외되었습니다.")
         return None
     if category not in VALID_CATEGORIES:
         category = "price_monitor"
+    if brand_category is not None and brand_category not in VALID_BRAND_CATEGORIES:
+        brand_category = None
     products = load_products()
     product = {
         "id": str(uuid.uuid4())[:8],
@@ -66,6 +80,7 @@ def add_product(name: str, url: str, category: str = "price_monitor") -> Optiona
         "url": url,
         "site": _detect_site(url),
         "category": category,
+        "brand_category": brand_category,
         "last_price": None,
         "status": "unknown",
         "added_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
