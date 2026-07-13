@@ -3,6 +3,13 @@
 channel="chrome" + browser_profile_naver/ 로그인 프로필 필수.
 headless=False 필수 (네이버 봇 감지 우회).
 span.weP_mymkqG 여러 개 중 최솟값 = 나의 할인가 추출 (2026-07 확인).
+
+색상 기반 이중 확인 (2026-07 추가): weP_mymkqG 범위 안에서 "나의 할인가"는
+항상 rgb(212, 0, 34)(빨강), 일반가/즉시할인가는 rgb(0, 0, 0)(검정)으로
+렌더링됨을 4개 상품·3개 스토어에서 교차 확인. 페이지에 동일한 빨간색을 쓰는
+별도 보조 가격 패널(class QNQnOeYmT3 등, 다른 숫자값)이 있는 경우가 있어
+색상 검사는 weP_mymkqG로 이미 좁혀진 후보 안에서만 적용한다(페이지 전체
+넓은 색상 스캔은 그 보조 패널을 잘못 주울 위험이 있어 하지 않음).
 """
 import re
 from typing import Optional
@@ -11,6 +18,9 @@ from scraper_common import retry_until_stable
 
 PRICE_MIN = 10_000
 PRICE_MAX = 100_000_000
+
+# "나의 할인가"(로그인/쿠폰 적용 최종가)를 표시할 때 쓰는 고정 색상값
+_MY_DISCOUNT_COLOR = "rgb(212, 0, 34)"
 
 _NAME_SEPS = (" : ", " | ", " - ")
 
@@ -59,18 +69,36 @@ async def scrape_naver(page) -> dict:
     except Exception:
         pass
 
-    # 최종가: span.weP_mymkqG 전부 수집 → 최솟값 (나의 할인가)
+    # 최종가: span.weP_mymkqG 전부 수집. 클래스+색상 조합으로 "나의 할인가"를 우선
+    # 신뢰(색상이 빨강인 후보 중 최솟값)하고, 빨간 후보가 없으면 기존처럼 전체 후보 중
+    # 최솟값으로 폴백한다(클래스 매칭 방식을 버리지 않고 색상 검사를 덧붙이는 조합).
     # 일반가 span이 할인가 span보다 먼저 렌더링되는 경우가 있어(동시 실행 부하 시
-    # 특히 심함), 2개 이상 잡힐 때까지 짧게 재시도한다.
+    # 특히 심함), 색상으로 나의 할인가를 이미 확신하지 못한 채 후보가 1개뿐이면
+    # 짧게 재시도한다.
     async def _attempt_price():
         try:
-            els = await page.query_selector_all("span.weP_mymkqG")
-            candidates = [_extract_price(await el.inner_text()) for el in els]
-            candidates = [p for p in candidates if p]
+            raw = await page.evaluate(
+                """() => Array.from(document.querySelectorAll('span.weP_mymkqG')).map(el => ({
+                    text: el.innerText,
+                    color: getComputedStyle(el).color,
+                }))"""
+            )
         except Exception:
-            candidates = []
-        value = min(candidates) if candidates else None
-        return value, len(candidates) >= 2
+            raw = []
+
+        candidates = []
+        red_candidates = []
+        for item in raw:
+            v = _extract_price(item.get("text"))
+            if not v:
+                continue
+            candidates.append(v)
+            if item.get("color") == _MY_DISCOUNT_COLOR:
+                red_candidates.append(v)
+
+        value = min(red_candidates) if red_candidates else (min(candidates) if candidates else None)
+        is_stable = bool(red_candidates) or len(candidates) >= 2
+        return value, is_stable
 
     price = await retry_until_stable(_attempt_price)
 
