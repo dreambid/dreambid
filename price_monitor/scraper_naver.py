@@ -72,10 +72,13 @@ async def scrape_naver(page) -> dict:
     # 최종가: span.weP_mymkqG 전부 수집. 클래스+색상 조합으로 "나의 할인가"를 우선
     # 신뢰(색상이 빨강인 후보 중 최솟값)하고, 빨간 후보가 없으면 기존처럼 전체 후보 중
     # 최솟값으로 폴백한다(클래스 매칭 방식을 버리지 않고 색상 검사를 덧붙이는 조합).
-    # 일반가 span이 할인가 span보다 먼저 렌더링되는 경우가 있어(동시 실행 부하 시
-    # 특히 심함), 색상으로 나의 할인가를 이미 확신하지 못한 채 후보가 1개뿐이면
-    # 짧게 재시도한다.
+    # 색상이 텍스트보다 먼저 바뀌는 과도기 오탐 방지: 같은 빨간 값이 재시도 간격
+    # (RETRY_DELAY_SECONDS=2초)을 두고 연속 2번 나와야만 안정으로 확정한다(A안).
+    # 처음 보는 빨간 값이거나 직전 값과 다르면 무조건 한 번 더 재확인한다.
+    _last_red_value: Optional[int] = None
+
     async def _attempt_price():
+        nonlocal _last_red_value
         try:
             raw = await page.evaluate(
                 """() => Array.from(document.querySelectorAll('span.weP_mymkqG')).map(el => ({
@@ -97,7 +100,15 @@ async def scrape_naver(page) -> dict:
                 red_candidates.append(v)
 
         value = min(red_candidates) if red_candidates else (min(candidates) if candidates else None)
-        is_stable = bool(red_candidates) or len(candidates) >= 2
+
+        if red_candidates:
+            current_red = min(red_candidates)
+            is_stable = (current_red == _last_red_value)
+            _last_red_value = current_red
+        else:
+            _last_red_value = None
+            is_stable = False
+
         return value, is_stable
 
     price = await retry_until_stable(_attempt_price)
