@@ -6,7 +6,7 @@
 import re
 from typing import Optional
 
-PRICE_MIN = 100
+PRICE_MIN = 100_000
 PRICE_MAX = 100_000_000
 
 
@@ -47,6 +47,8 @@ async def scrape_himart(page) -> dict:
     if benefit_el:
         raw = await benefit_el.inner_text()
         price = _extract_price(raw)
+        if price is not None:
+            print(f"[himart price] {name}: 최대혜택가 성공 - {price}원")
 
     # 폴백: 쿠폰 적용 판매가
     if price is None:
@@ -54,12 +56,16 @@ async def scrape_himart(page) -> dict:
         if final_el:
             raw = await final_el.inner_text()
             price = _extract_price(raw)
+            if price is not None:
+                print(f"[himart price] {name}: 쿠폰가 폴백 성공 - {price}원")
 
     # 폴백2: body 전체 텍스트
     if price is None:
         try:
             body = await page.inner_text("body")
             price = _extract_price(body)
+            if price is not None:
+                print(f"[himart price] {name}: body 전체 폴백 성공 - {price}원 (주의: 오탐 위험)")
         except Exception:
             pass
 
