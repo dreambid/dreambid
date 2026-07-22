@@ -101,6 +101,7 @@ async def scrape_naver(page) -> dict:
 
         value = min(red_candidates) if red_candidates else (min(candidates) if candidates else None)
 
+        prev_red_value = _last_red_value
         if red_candidates:
             current_red = min(red_candidates)
             is_stable = (current_red == _last_red_value)
@@ -108,6 +109,9 @@ async def scrape_naver(page) -> dict:
         else:
             _last_red_value = None
             is_stable = False
+
+        print(f"[naver price] {name}: 빨간후보={red_candidates}, 검정후보={candidates}, "
+              f"직전빨간값={prev_red_value}, 최종값={value}, 안정={is_stable}")
 
         return value, is_stable
 
