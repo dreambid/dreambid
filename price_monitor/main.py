@@ -200,6 +200,20 @@ async def _check_one_product_impl(product: dict) -> None:
     is_out = result.get("out_of_stock", False)
     current_status = "out_of_stock" if is_out else "in_stock"
 
+    # 급락 오탐 방어: 직전 가격 대비 50% 미만으로 떨어지면 스크래핑 오류 가능성이
+    # 높다고 보고, 가격/상태를 갱신하지 않고 이전 값을 그대로 유지한다. 알림도
+    # 보내지 않고 로그만 남겨 다음 사이클에 정상값이 잡히면 자연스럽게 넘어가도록 한다.
+    if (
+        current_status == "in_stock"
+        and current_price is not None
+        and last_price is not None
+        and last_price > 0
+        and current_price < last_price * 0.5
+    ):
+        print(f"    [급락의심-스킵] {name}: {last_price:,}원 → {current_price:,}원 "
+              f"(50% 이상 급락, 저장 안 함, 알림 안 함)")
+        return
+
     # 상품 상태 저장 (스크래퍼가 반환한 name이 있으면 함께 갱신, unknown 연속 기록은 리셋)
     async with _PRODUCTS_LOCK:
         update_product_state(
