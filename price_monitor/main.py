@@ -23,6 +23,7 @@ from scraper import (
     _is_gmarket,
     _is_auction,
     _is_naver,
+    _is_ssg,
     _diag,
     _OPEN_REVIEW_SESSIONS,
 )
@@ -44,9 +45,13 @@ _WATCH_DIR = Path(__file__).parent
 # 모듈 임포트 시점(asyncio.run() 호출 전)에 만들면 이후 asyncio.run()이 새로 만드는
 # 루프와 불일치해 "attached to a different loop" 오류가 난다. 그래서 실제 사용 시점인
 # check_products() 코루틴 안에서 매번 새로 생성한다 (아래 None은 타입 힌트 목적).
-HEADLESS_SEM: Optional[asyncio.Semaphore] = None            # 11번가/롯데온/LG닷컴/하이마트/SSG + 미분류 URL
+HEADLESS_SEM: Optional[asyncio.Semaphore] = None            # 11번가/롯데온/LG닷컴/하이마트 + 미분류 URL
 GMARKET_AUCTION_SEM: Optional[asyncio.Semaphore] = None      # G마켓/옥션 (persistent context 세션 공유)
 NAVER_SEM: Optional[asyncio.Semaphore] = None                # 네이버 스마트스토어
+# SSG는 IP 차단 이력 때문에 다른 사이트와 동시 실행 수를 공유하지 않고 완전히
+# 분리한다(2026-07-21) — HEADLESS_SEM(4)에 같이 묶여있으면 SSG 요청이 다른
+# 사이트 트래픽과 겹쳐 몰릴 수 있어, 단독 세마포어(동시 1개)로 격리한다.
+SSG_SEM: Optional[asyncio.Semaphore] = None                  # SSG.COM 단독
 
 # products.json 읽기→수정→쓰기 전체 구간 보호 (update_product_state 동시 호출 대비)
 _PRODUCTS_LOCK: Optional[asyncio.Lock] = None
@@ -84,6 +89,8 @@ def _semaphore_for(url: str) -> asyncio.Semaphore:
         return NAVER_SEM
     if _is_gmarket(url) or _is_auction(url):
         return GMARKET_AUCTION_SEM
+    if _is_ssg(url):
+        return SSG_SEM
     return HEADLESS_SEM
 
 
@@ -232,11 +239,12 @@ async def _check_one_product_impl(product: dict) -> None:
 
 async def check_products():
     """등록된 모든 상품의 가격 및 상태를 동시에 확인 (상품별 태스크 + gather)"""
-    global HEADLESS_SEM, GMARKET_AUCTION_SEM, NAVER_SEM, _PRODUCTS_LOCK
+    global HEADLESS_SEM, GMARKET_AUCTION_SEM, NAVER_SEM, SSG_SEM, _PRODUCTS_LOCK
     # 현재 실행 중인 이벤트 루프에 바인딩되도록 매 사이클 새로 생성
     HEADLESS_SEM = asyncio.Semaphore(4)
     GMARKET_AUCTION_SEM = asyncio.Semaphore(1)
     NAVER_SEM = asyncio.Semaphore(1)
+    SSG_SEM = asyncio.Semaphore(1)
     _PRODUCTS_LOCK = asyncio.Lock()
 
     products = load_products()

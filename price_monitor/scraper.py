@@ -1,7 +1,9 @@
 """Playwright 기반 가격 스크래퍼 (11번가/G마켓/옥션/롯데온/LG닷컴/오늘의집/하이마트/SSG/네이버 스마트스토어 지원, 쿠팡 수동확인)"""
+import json
 import os
 import re
 import time
+from datetime import date, datetime
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
@@ -25,6 +27,12 @@ PRICE_MAX = 100_000_000
 
 # 쿠팡: Akamai WAF edgesuite 차단 확인됨 — headless=False도 불가, 수동확인 유지
 MANUAL_CHECK_DOMAINS = frozenset(["coupang.com"])
+
+# SSG 하드 쿨다운 설정 파일 경로 (2026-07-21): 매 사이클 실제 접속을 시도하는
+# 것 자체가 WAF에 봇 트래픽으로 누적돼 차단이 오히려 길어진 것으로 판단됨 —
+# config.json의 ssg_cooldown_until 날짜가 지날 때까지는 브라우저조차 띄우지
+# 않고 즉시 수동확인으로 빠진다.
+_CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.json")
 
 # G마켓/옥션/네이버: Cloudflare/로그인 우회용 persistent context 프로필 디렉토리
 GMARKET_PROFILE_DIR = Path(os.path.dirname(__file__)) / "browser_profile_gmarket"
@@ -60,6 +68,23 @@ def _extract_price(text: str) -> Optional[int]:
 def _is_manual_check(url: str) -> bool:
     """Akamai WAF 완전 차단 도메인 확인"""
     return any(d in urlparse(url).netloc.lower() for d in MANUAL_CHECK_DOMAINS)
+
+
+def _is_ssg_cooldown() -> bool:
+    """config.json의 ssg_cooldown_until(YYYY-MM-DD) 날짜가 아직 안 지났으면 True.
+    반드시 date 객체로 파싱해서 비교한다(문자열 사전식 비교 금지 — 포맷이 항상
+    YYYY-MM-DD로 고정된다는 보장이 없고, 실수로 다른 포맷이 섞이면 문자열
+    비교는 조용히 틀린 결과를 낼 수 있어 명시적 파싱이 안전하다)."""
+    try:
+        with open(_CONFIG_PATH, "r", encoding="utf-8") as f:
+            cfg = json.load(f)
+        cooldown_str = cfg.get("ssg_cooldown_until")
+        if not cooldown_str:
+            return False
+        cooldown_until = datetime.strptime(cooldown_str, "%Y-%m-%d").date()
+        return date.today() < cooldown_until
+    except Exception:
+        return False
 
 
 def _is_gmarket(url: str) -> bool: return "gmarket.co.kr" in urlparse(url).netloc.lower()
@@ -129,6 +154,13 @@ async def scrape_product(url: str) -> dict:
     _diag(url, "scrape_product() 진입")
     # 쿠팡: Akamai WAF 차단 확인됨 → 즉시 수동확인 반환
     if _is_manual_check(url):
+        return _manual_check_result()
+
+    # SSG 하드 쿨다운: 브라우저를 띄우거나 네트워크 요청을 하기 전에 먼저 확인 —
+    # 쿨다운 기간 중엔 접속 시도 자체를 완전히 건너뛴다 (쿠팡과 동일한 하드 스킵
+    # 방식이지만, 날짜가 지나면 자동으로 정상 스크래핑으로 복귀한다는 점이 다름)
+    if _is_ssg(url) and _is_ssg_cooldown():
+        _diag(url, "SSG 쿨다운 기간 — 접속 시도 없이 즉시 수동확인 반환")
         return _manual_check_result()
 
     if _is_gmarket(url) and not GMARKET_PROFILE_DIR.exists():
@@ -215,10 +247,10 @@ async def scrape_product(url: str) -> dict:
                 _diag(url, "⑤가격추출(himart) 직후")
                 return himart_result
 
-            # SSG: 전용 파서로 즉시 반환
+            # SSG: 전용 파서로 즉시 반환 (403 여부 판단용으로 _response도 함께 전달)
             if is_ssg:
                 _diag(url, "⑤가격추출(ssg) 직전")
-                ssg_result = await scrape_ssg(page)
+                ssg_result = await scrape_ssg(page, _response)
                 _diag(url, "⑤가격추출(ssg) 직후")
                 return ssg_result
 
