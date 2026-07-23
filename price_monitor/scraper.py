@@ -1,4 +1,4 @@
-"""Playwright 기반 가격 스크래퍼 (11번가/G마켓/옥션/롯데온/LG닷컴/오늘의집/하이마트/SSG/네이버 스마트스토어 지원, 쿠팡 수동확인)"""
+"""Playwright 기반 가격 스크래퍼 (11번가/G마켓/옥션/롯데온/LG닷컴/오늘의집/하이마트/SSG/네이버 스마트스토어/삼성하나로 지원, 쿠팡 수동확인)"""
 import json
 import os
 import re
@@ -12,6 +12,7 @@ from scraper_11st import _fetch_11st_coupon_discount
 from scraper_common import retry_until_stable
 from scraper_himart import scrape_himart
 from scraper_naver import scrape_naver
+from scraper_samsunghanaro import scrape_samsunghanaro
 from scraper_ssg import scrape_ssg
 
 # Mac Chrome 최신 버전 User-Agent
@@ -96,6 +97,7 @@ def _is_ohou(url: str) -> bool: n = urlparse(url).netloc.lower(); return "ohou.s
 def _is_himart(url: str) -> bool: return "e-himart.co.kr" in urlparse(url).netloc.lower()
 def _is_ssg(url: str) -> bool: return "ssg.com" in urlparse(url).netloc.lower()
 def _is_naver(url: str) -> bool: return "smartstore.naver.com" in url.lower()
+def _is_samsunghanaro(url: str) -> bool: return "samsunghanaro.com" in urlparse(url).netloc.lower()
 def _manual_check_result() -> dict:
     return {"success": True, "manual_check": True, "name": None, "price": None,
             "out_of_stock": False, "discontinued": False, "uncertain": False}
@@ -131,6 +133,7 @@ def _site_label(url: str) -> str:
     if _is_himart(url): return "himart"
     if _is_ssg(url): return "ssg"
     if _is_ohou(url): return "ohou"
+    if _is_samsunghanaro(url): return "samsunghanaro"
     return "unknown"
 
 
@@ -241,6 +244,7 @@ async def scrape_product(url: str) -> dict:
             is_himart  = _is_himart(url)  or _is_himart(final_url)
             is_ssg     = _is_ssg(url)     or _is_ssg(final_url)
             is_naver   = _is_naver(url)   or _is_naver(final_url)
+            is_samsunghanaro = _is_samsunghanaro(url) or _is_samsunghanaro(final_url)
 
             # 네이버 429(요청 과다) 응답: 알림 없이 수동확인으로 전환
             if is_naver and _response is not None and _response.status == 429:
@@ -259,6 +263,13 @@ async def scrape_product(url: str) -> dict:
                 ssg_result = await scrape_ssg(page, _response)
                 _diag(url, "⑤가격추출(ssg) 직후")
                 return ssg_result
+
+            # 삼성하나로: 전용 파서로 즉시 반환
+            if is_samsunghanaro:
+                _diag(url, "⑤가격추출(samsunghanaro) 직전")
+                samsunghanaro_result = await scrape_samsunghanaro(page)
+                _diag(url, "⑤가격추출(samsunghanaro) 직후")
+                return samsunghanaro_result
 
             # 네이버 스마트스토어: 전용 파서로 즉시 반환
             # (로그인/캡차 리다이렉트로 manual_check가 나오면 점검필요로 전환, 창은 유지)
