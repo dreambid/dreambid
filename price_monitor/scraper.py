@@ -111,8 +111,14 @@ def _verification_result(site: str, hint: str) -> dict:
 
 def _profile_locked(profile_dir: Path) -> bool:
     """이미 열려서 점검 대기 중인 persistent 브라우저 창이 있는지 SingletonLock으로 판별.
-    (있으면 같은 프로필로 새 창을 또 여는 걸 막아 창이 무한정 쌓이는 걸 방지)"""
-    return (profile_dir / "SingletonLock").exists()
+    (있으면 같은 프로필로 새 창을 또 여는 걸 막아 창이 무한정 쌓이는 걸 방지)
+
+    SingletonLock은 심볼릭 링크이고 타겟이 "호스트명-PID" 형태의 문자열이라
+    실제 파일시스템 경로가 아니다. Path.exists()는 심볼릭 링크를 따라가 그
+    타겟이 실제로 존재하는 경로인지 확인하므로 항상 False를 반환해 잠금을
+    전혀 감지하지 못했다(2026-07-23 발견) — os.path.lexists()로 심볼릭 링크
+    자체의 존재만 확인하도록 수정."""
+    return os.path.lexists(profile_dir / "SingletonLock")
 
 
 def _site_label(url: str) -> str:
