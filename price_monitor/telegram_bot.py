@@ -94,6 +94,18 @@ def notify_price_change(name: str, old_price: int, new_price: int, category: str
     send_message(message)
 
 
+def notify_big_price_change(name: str, old_price: int, new_price: int, category: str = "price_monitor"):
+    """급등/급락(50% 이상) 가격 변동이 연속 2회 확인되어 확정됐을 때 전송하는 별도 알림.
+    notify_price_change와 형식을 구분해 "2회 확인을 거친 급변동"임을 눈에 띄게 표시한다."""
+    direction = "상승" if new_price > old_price else "하락"
+    rate = abs(new_price - old_price) / old_price * 100
+    message = (
+        f"⚠️ [{name}] 가격 급변동 확정: "
+        f"{old_price:,}원 → {new_price:,}원 ({rate:.1f}% {direction}) — 2회 연속 확인됨"
+    )
+    send_message(message)
+
+
 def notify_out_of_stock(name: str, category: str = "price_monitor"):
     """품절 알림 전송"""
     message = (

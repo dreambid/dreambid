@@ -165,10 +165,14 @@ def update_product_state(
     name: Optional[str] = None,
     unknown_count: Optional[int] = None,
     ssg_block_count: Optional[int] = None,
+    reset_pending: bool = False,
 ):
     """특정 상품의 가격과 상태를 업데이트 (가격 변동 감지를 위해 prev_price 보존).
     unknown_count가 주어지면 '확인필요(unknown)' 연속 횟수를, ssg_block_count가 주어지면
-    SSG 차단 페이지 연속 감지 횟수를 함께 기록한다."""
+    SSG 차단 페이지 연속 감지 횟수를 함께 기록한다. reset_pending=True면 급변동 의심
+    상태(pending_price/pending_count)를 명시적으로 초기화한다 — 다른 파라미터들은
+    "None이면 안 건드림" 방식이라 pending_price를 실제로 None으로 되돌리는 데는
+    쓸 수 없어 별도 플래그로 처리한다."""
     products = load_products()
     updated = False
     for p in products:
@@ -184,6 +188,9 @@ def update_product_state(
                 p["unknown_count"] = unknown_count
             if ssg_block_count is not None:
                 p["ssg_block_count"] = ssg_block_count
+            if reset_pending:
+                p["pending_price"] = None
+                p["pending_count"] = 0
             updated = True
             break
 
@@ -191,3 +198,20 @@ def update_product_state(
         save_products(products)
     else:
         print(f"[경고] update_product_state: ID '{product_id}' 상품을 찾을 수 없습니다.")
+
+
+def set_pending_price(product_id: str, pending_price: Optional[int], pending_count: int) -> bool:
+    """가격 급변동 의심 상태(pending_price/pending_count)만 갱신 (가격/상태는 안 건드림).
+    같은 값이 연속 2회 확인되기 전까지, 의심되는 값과 그 확인 횟수를 다음 사이클까지
+    들고 있기 위한 용도."""
+    products = load_products()
+    updated = False
+    for p in products:
+        if p["id"] == product_id:
+            p["pending_price"] = pending_price
+            p["pending_count"] = pending_count
+            updated = True
+            break
+    if updated:
+        save_products(products)
+    return updated

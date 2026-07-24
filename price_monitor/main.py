@@ -16,6 +16,7 @@ from product_manager import (
     delete_product,
     list_products,
     load_products,
+    set_pending_price,
     update_product_state,
 )
 from scraper import (
@@ -28,6 +29,7 @@ from scraper import (
     _OPEN_REVIEW_SESSIONS,
 )
 from telegram_bot import (
+    notify_big_price_change,
     notify_error,
     notify_manual_review,
     notify_out_of_stock,
@@ -200,25 +202,47 @@ async def _check_one_product_impl(product: dict) -> None:
     is_out = result.get("out_of_stock", False)
     current_status = "out_of_stock" if is_out else "in_stock"
 
-    # 급락 오탐 방어: 직전 가격 대비 50% 미만으로 떨어지면 스크래핑 오류 가능성이
-    # 높다고 보고, 가격/상태를 갱신하지 않고 이전 값을 그대로 유지한다. 알림도
-    # 보내지 않고 로그만 남겨 다음 사이클에 정상값이 잡히면 자연스럽게 넘어가도록 한다.
+    # 가격 급변동 확정 로직: 직전가 대비 50% 이상 변동(급등/급락 모두)이면 곧바로
+    # 확정하지 않고, 같은 값이 연속 2회 사이클 확인돼야만 진짜 변동으로 저장+알림한다.
+    # 스크래핑 일회성 오류와 실제 급변동을 구분하기 위한 방어 로직.
+    change_rate = None
     if (
         current_status == "in_stock"
         and current_price is not None
         and last_price is not None
         and last_price > 0
-        and current_price < last_price * 0.5
     ):
-        print(f"    [급락의심-스킵] {name}: {last_price:,}원 → {current_price:,}원 "
-              f"(50% 이상 급락, 저장 안 함, 알림 안 함)")
-        return
+        change_rate = abs(current_price - last_price) / last_price
 
-    # 상품 상태 저장 (스크래퍼가 반환한 name이 있으면 함께 갱신, unknown 연속 기록은 리셋)
+    if change_rate is not None and change_rate >= 0.5:
+        pending_price = product.get("pending_price")
+        pending_count = product.get("pending_count", 0)
+        new_pending_count = pending_count + 1 if pending_price == current_price else 1
+
+        if new_pending_count >= 2:
+            direction = "상승" if current_price > last_price else "하락"
+            async with _PRODUCTS_LOCK:
+                update_product_state(
+                    product_id, current_price, current_status, result.get("name"),
+                    unknown_count=0, ssg_block_count=0, reset_pending=True,
+                )
+            print(f"    [급변동확정] {name}: {last_price:,}원 → {current_price:,}원 "
+                  f"({change_rate * 100:.1f}% {direction}) — 2회 연속 확인됨")
+            notify_big_price_change(name, last_price, current_price, category)
+            return
+        else:
+            async with _PRODUCTS_LOCK:
+                set_pending_price(product_id, current_price, new_pending_count)
+            print(f"    [급변동의심-대기] {name}: {last_price:,}원 → {current_price:,}원 "
+                  f"({new_pending_count}/2회 확인, 다음 확인 대기 중)")
+            return
+
+    # 상품 상태 저장 (스크래퍼가 반환한 name이 있으면 함께 갱신, unknown 연속 기록은
+    # 리셋, 정상 범위로 돌아왔으면 급변동 의심 상태도 함께 해제)
     async with _PRODUCTS_LOCK:
         update_product_state(
             product_id, current_price, current_status, result.get("name"),
-            unknown_count=0, ssg_block_count=0,
+            unknown_count=0, ssg_block_count=0, reset_pending=True,
         )
 
     # 첫 실행(last_price=None, status=unknown)이면 알림 없이 현재값만 저장
@@ -281,15 +305,20 @@ async def check_products():
     print("[모니터링] 이번 회차 확인 완료\n")
 
 
+_SCAN_TIMES = ("06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00", "22:00")
+
+
 def run_monitoring():
-    """schedule을 이용해 매시 정각(1:00, 2:00, ...)에 반복 모니터링 실행"""
-    print("\n[모니터링] 매시 정각에 실행합니다. Ctrl+C로 중지하세요.\n")
+    """schedule을 이용해 06~22시 사이 2시간 간격(하루 9회)으로 반복 모니터링 실행.
+    23시~05시는 스캔하지 않는다."""
+    print(f"\n[모니터링] {', '.join(_SCAN_TIMES)}에 실행합니다 (하루 9회). Ctrl+C로 중지하세요.\n")
 
     # 시작 즉시 1회 실행 (상품별 동시 스크래핑을 위한 asyncio 진입점)
     asyncio.run(check_products())
 
-    # 이후 매시 정각마다 반복 (schedule은 동기 콜백만 등록 가능하므로 asyncio.run으로 감쌈)
-    schedule.every().hour.at(":00").do(lambda: asyncio.run(check_products()))
+    # 지정된 9개 시각마다 반복 (schedule은 동기 콜백만 등록 가능하므로 asyncio.run으로 감쌈)
+    for scan_time in _SCAN_TIMES:
+        schedule.every().day.at(scan_time).do(lambda: asyncio.run(check_products()))
 
     try:
         while True:
