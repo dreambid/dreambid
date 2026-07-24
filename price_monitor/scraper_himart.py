@@ -70,9 +70,12 @@ async def scrape_himart(page) -> dict:
             pass
 
     # 재고 판단: 구매하기/바로구매 버튼 존재 여부
+    # ".hm-purchase-btn"은 "선물하기"/"전문가 가전상담" 등 무관한 버튼도 같은
+    # 클래스를 공유해 query_selector()가 첫 매칭(선물하기 등)을 잘못 집는 사례가
+    # 발견돼(2026-07-24) 제거함 — 텍스트 기반 셀렉터만으로도 "구매하기" 버튼은
+    # 정확히 잡힌다.
     buy_found = False
     for sel in [
-        ".hm-purchase-btn",
         'button:has-text("바로구매")',
         'button:has-text("구매하기")',
         'button:has-text("장바구니")',
