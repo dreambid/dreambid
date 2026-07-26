@@ -42,6 +42,15 @@ async def scrape_himart(page) -> dict:
             if candidate and candidate != "롯데하이마트":
                 name = candidate
 
+    # 최대혜택가 요소가 늦게 렌더링되는 경우가 있어 명시적으로 대기한다(2026-07-26).
+    # 실측 결과 렌더링까지 최대 2.7초 걸리는 경우가 있어, 공용 고정 대기(2초)보다
+    # 늦게 뜨면 못 잡고 body 폴백(오탐 위험)으로 새는 사례가 있었음. 요소가 아예
+    # 없는 상품도 있을 수 있으므로 타임아웃 예외는 무시하고 다음 로직으로 진행한다.
+    try:
+        await page.wait_for_selector(".hm-view-more__benefit-wrapper", timeout=5000)
+    except Exception:
+        pass
+
     # 최대혜택가 우선 추출
     benefit_el = await page.query_selector(".hm-view-more__benefit-wrapper")
     if benefit_el:
